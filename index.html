@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuel Sales Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2333;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.15);
+    --text: #e8eaf0;
+    --text-muted: #7c8299;
+    --text-dim: #4a5068;
+    --ms: #4f9cf9;
+    --ms-bg: rgba(79,156,249,0.1);
+    --ms-border: rgba(79,156,249,0.25);
+    --hsd: #4ade80;
+    --hsd-bg: rgba(74,222,128,0.1);
+    --hsd-border: rgba(74,222,128,0.25);
+    --accent: #4f9cf9;
+    --accent-bg: rgba(79,156,249,0.12);
+    --radius: 10px;
+    --radius-sm: 7px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+  }
+
+  .app { width: 100%; max-width: 600px; }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .header-icon {
+    width: 42px; height: 42px;
+    background: var(--accent-bg);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .header-title { font-size: 20px; font-weight: 600; color: var(--text); }
+  .header-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+
+  /* Slip blocks */
+  .slip-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .slip-block:last-of-type { margin-bottom: 0; }
+  .slip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .slip-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .slip-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+  .badge-initial { background: rgba(250,204,21,0.12); color: #facc15; border: 1px solid rgba(250,204,21,0.2); }
+  .badge-final { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+
+  .vol-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .vol-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  .ms-lbl { color: var(--ms); }
+  .hsd-lbl { color: var(--hsd); }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    height: 38px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 0 12px;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+  }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input:focus { outline: none; border-color: var(--accent); }
+  input.filled { border-color: rgba(79,156,249,0.4); background: rgba(79,156,249,0.04); }
+
+  /* Scan button */
+  .scan-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .scan-btn:hover { background: rgba(255,255,255,0.05); border-color: var(--accent); color: var(--ms); }
+  .scan-btn svg { flex-shrink: 0; }
+
+  /* Status pill */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+  }
+  .status-ok { background: rgba(74,222,128,0.1); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+  .status-err { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
+  .status-loading { background: rgba(79,156,249,0.1); color: var(--ms); border: 1px solid rgba(79,156,249,0.2); }
+
+  /* Primary button */
+  .btn-primary {
+    width: 100%;
+    height: 44px;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--ms);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* Testing dialog */
+  .testing-card { text-align: center; }
+  .testing-q { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .testing-hint { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .testing-btns { display: flex; gap: 10px; justify-content: center; }
+  .btn-yes {
+    height: 42px; padding: 0 36px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(74,222,128,0.3);
+    background: rgba(74,222,128,0.1);
+    color: #4ade80;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-yes:hover { background: rgba(74,222,128,0.18); }
+  .btn-no {
+    height: 42px; padding: 0 36px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-no:hover { background: rgba(255,255,255,0.04); }
+
+  /* Metrics */
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .metric-block {
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .metric-block.ms { background: var(--ms-bg); border: 1px solid var(--ms-border); }
+  .metric-block.hsd { background: var(--hsd-bg); border: 1px solid var(--hsd-border); }
+  .metric-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .metric-tag.ms { color: var(--ms); }
+  .metric-tag.hsd { color: var(--hsd); }
+  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: var(--text); }
+  .metric-unit { font-size: 13px; color: var(--text-muted); margin-left: 3px; }
+
+  /* Rate section */
+  .rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .rate-row:last-child { border-bottom: none; }
+  .rate-info { display: flex; align-items: center; gap: 8px; }
+  .rate-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .rate-dot.ms { background: var(--ms); }
+  .rate-dot.hsd { background: var(--hsd); }
+  .rate-name { font-size: 13px; color: var(--text-muted); }
+  .rate-input-wrap { display: flex; align-items: center; gap: 6px; }
+  .rate-symbol { font-size: 13px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .rate-input-wrap input { width: 110px; text-align: right; }
+
+  /* Total */
+  .total-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .total-label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+  .total-breakdown { font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
+  .total-amount { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 500; color: var(--text); }
+
+  /* WhatsApp btn */
+  .btn-whatsapp {
+    width: 100%;
+    height: 46px;
+    border: none;
+    border-radius: var(--radius);
+    background: #25D366;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: opacity 0.15s;
+  }
+  .btn-whatsapp:hover { opacity: 0.9; }
+
+  /* Scanner overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .overlay-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+  }
+  .overlay-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .overlay-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .cam-frame {
+    width: 100%;
+    height: 180px;
+    background: #000;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .cam-frame video { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .scan-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--ms), transparent);
+    animation: scanMove 1.8s ease-in-out infinite;
+    top: 20%;
+  }
+  @keyframes scanMove { 0%,100%{top:15%} 50%{top:80%} }
+  .cam-corner {
+    position: absolute;
+    width: 18px; height: 18px;
+    border-color: var(--ms);
+    border-style: solid;
+    border-width: 0;
+  }
+  .cam-corner.tl { top:8px; left:8px; border-top-width:2px; border-left-width:2px; border-radius: 4px 0 0 0; }
+  .cam-corner.tr { top:8px; right:8px; border-top-width:2px; border-right-width:2px; border-radius: 0 4px 0 0; }
+  .cam-corner.bl { bottom:8px; left:8px; border-bottom-width:2px; border-left-width:2px; border-radius: 0 0 0 4px; }
+  .cam-corner.br { bottom:8px; right:8px; border-bottom-width:2px; border-right-width:2px; border-radius: 0 0 4px 0; }
+
+  .overlay-actions { display: flex; gap: 8px; justify-content: center; }
+  .btn-upload {
+    display: flex; align-items: center; gap: 6px;
+    height: 36px; padding: 0 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-upload:hover { background: rgba(255,255,255,0.05); }
+  .btn-cancel {
+    height: 36px; padding: 0 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .hidden { display: none !important; }
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* Spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(79,156,249,0.3);
+    border-top-color: var(--ms);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-icon">⛽</div>
+    <div>
+      <div class="header-title">Fuel Sales Tracker</div>
+      <div class="header-sub">Daily MS & HSD volume report</div>
+    </div>
+  </div>
+
+  <!-- Step 1: Slip scanning -->
+  <div class="card" id="step-volumes">
+    <div class="card-label">Step 1 — Scan or enter CumVolume from both slips</div>
+
+    <!-- Slip 1 -->
+    <div class="slip-block">
+      <div class="slip-header">
+        <div class="slip-name">
+          📄 Slip 1
+          <span class="slip-badge badge-initial">INITIAL</span>
+        </div>
+        <button class="scan-btn" onclick="openScanner('initial')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3M14 21h2M18 21h3"/></svg>
+          Scan slip
+        </button>
+      </div>
+      <div class="vol-grid">
+        <div class="vol-group">
+          <label class="ms-lbl">MS CumVolume (L)</label>
+          <input type="number" id="ms-initial" placeholder="0.00" step="0.01">
+        </div>
+        <div class="vol-group">
+          <label class="hsd-lbl">HSD CumVolume (L)</label>
+          <input type="number" id="hsd-initial" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+      <div id="status-initial"></div>
+    </div>
+
+    <!-- Slip 2 -->
+    <div class="slip-block">
+      <div class="slip-header">
+        <div class="slip-name">
+          📄 Slip 2
+          <span class="slip-badge badge-final">FINAL</span>
+        </div>
+        <button class="scan-btn" onclick="openScanner('final')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3M14 21h2M18 21h3"/></svg>
+          Scan slip
+        </button>
+      </div>
+      <div class="vol-grid">
+        <div class="vol-group">
+          <label class="ms-lbl">MS CumVolume (L)</label>
+          <input type="number" id="ms-final" placeholder="0.00" step="0.01">
+        </div>
+        <div class="vol-group">
+          <label class="hsd-lbl">HSD CumVolume (L)</label>
+          <input type="number" id="hsd-final" placeholder="0.00" step="0.01">
+        </div>
+      </div>
+      <div id="status-final"></div>
+    </div>
+
+    <button class="btn-primary" onclick="promptTesting()">
+      ✓ Done — Calculate today's sale
+    </button>
+  </div>
+
+  <!-- Step 2: Testing dialog -->
+  <div class="card testing-card hidden" id="step-testing">
+    <div class="testing-q">🔬 Is testing done today?</div>
+    <div class="testing-hint">If yes, 5 litres will be deducted from each product's sale volume.</div>
+    <div class="testing-btns">
+      <button class="btn-yes" onclick="setTesting(true)">Yes, deduct 5L</button>
+      <button class="btn-no" onclick="setTesting(false)">No</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Sales display + rate + calculate -->
+  <div class="card hidden" id="step-sales">
+    <div class="card-label" id="sales-label">Today's sale</div>
+    <div class="metric-grid" id="sales-display"></div>
+
+    <div class="divider"></div>
+    <div class="card-label" style="margin-bottom:12px;">Rate per litre — edit if changed</div>
+
+    <div class="rate-row">
+      <div class="rate-info">
+        <div class="rate-dot ms"></div>
+        <div class="rate-name">MS · Petrol</div>
+      </div>
+      <div class="rate-input-wrap">
+        <span class="rate-symbol">₹</span>
+        <input type="number" id="ms-rate" value="115.54" step="0.01">
+      </div>
+    </div>
+    <div class="rate-row">
+      <div class="rate-info">
+        <div class="rate-dot hsd"></div>
+        <div class="rate-name">HSD · Diesel</div>
+      </div>
+      <div class="rate-input-wrap">
+        <span class="rate-symbol">₹</span>
+        <input type="number" id="hsd-rate" value="100.56" step="0.01">
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="calculateAmount()">
+      🧮 Calculate Amount
+    </button>
+
+    <!-- Total + WhatsApp -->
+    <div class="hidden" id="amount-block">
+      <div class="total-box">
+        <div>
+          <div class="total-label">Total Sale Amount</div>
+          <div class="total-breakdown" id="breakdown-text"></div>
+        </div>
+        <div class="total-amount" id="total-amount">₹0</div>
+      </div>
+      <button class="btn-whatsapp" onclick="shareWhatsApp()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Share on WhatsApp
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Scanner Overlay -->
+<div class="overlay hidden" id="scanner-overlay">
+  <div class="overlay-box">
+    <div class="overlay-title" id="overlay-title">Scanning Slip</div>
+    <div class="overlay-sub" id="overlay-sub">Upload a photo or use camera</div>
+    <div class="cam-frame">
+      <div class="cam-corner tl"></div>
+      <div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div>
+      <div class="cam-corner br"></div>
+      <div class="scan-line" id="scan-line"></div>
+      <video id="cam-video" autoplay playsinline muted></video>
+    </div>
+    <div id="gemini-status"></div>
+    <div class="overlay-actions" style="margin-top:12px;">
+      <button class="btn-upload" onclick="triggerUpload()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        Upload photo
+      </button>
+      <button class="btn-cancel" onclick="closeScanner()">Cancel</button>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none">
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  ⚠️  PASTE YOUR RENDER BACKEND URL BELOW
+//  Example: "https://fuel-backend-0lma.onrender.com"
+// ─────────────────────────────────────────────
+const BACKEND_URL = "YOUR_RENDER_URL_HERE";
+// ─────────────────────────────────────────────
+
+let currentSlot = '';
+let cameraStream = null;
+let salesData = { ms: 0, hsd: 0 };
+let testingDone = false;
+
+// ── Scanner ──────────────────────────────────
+
+function openScanner(slot) {
+  currentSlot = slot;
+  const label = slot === 'initial' ? 'Slip 1 — Initial' : 'Slip 2 — Final';
+  document.getElementById('overlay-title').textContent = `Scanning ${label}`;
+  document.getElementById('overlay-sub').textContent = 'Upload photo or aim camera at the slip';
+  document.getElementById('gemini-status').innerHTML = '';
+  document.getElementById('scanner-overlay').classList.remove('hidden');
+  startCamera();
+}
+
+async function startCamera() {
+  try {
+    const video = document.getElementById('cam-video');
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = cameraStream;
+    video.style.display = 'block';
+    // Auto-capture after 2.5s
+    setTimeout(captureAndSend, 2500);
+  } catch(e) {
+    document.getElementById('overlay-sub').textContent = 'Camera unavailable — upload a photo below';
+  }
+}
+
+async function captureAndSend() {
+  const video = document.getElementById('cam-video');
+  if (!video.srcObject) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob(blob => { if(blob) sendToGemini(blob); }, 'image/jpeg', 0.92);
+}
+
+function triggerUpload() {
+  document.getElementById('file-input').click();
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) sendToGemini(e.target.files[0]);
+  e.target.value = '';
+});
+
+async function sendToGemini(imageBlob) {
+  if (BACKEND_URL === "YOUR_RENDER_URL_HERE") {
+    setGeminiStatus('error', '⚠️ Backend URL not set — edit the HTML file and replace YOUR_RENDER_URL_HERE');
+    return;
+  }
+  setGeminiStatus('loading', 'Reading slip with Gemini AI…');
+  try {
+    const base64 = await blobToBase64(imageBlob);
+    const mimeType = imageBlob.type || 'image/jpeg';
+
+    const response = await fetch(`${BACKEND_URL}/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64, mimeType })
+    });
+
+    const parsed = await response.json();
+    if (!response.ok) throw new Error(parsed.error || 'Backend error');
+
+    let filled = 0;
+    if (parsed.ms !== null && parsed.ms !== undefined) {
+      document.getElementById(`ms-${currentSlot}`).value = parseFloat(parsed.ms).toFixed(2);
+      document.getElementById(`ms-${currentSlot}`).classList.add('filled');
+      filled++;
+    }
+    if (parsed.hsd !== null && parsed.hsd !== undefined) {
+      document.getElementById(`hsd-${currentSlot}`).value = parseFloat(parsed.hsd).toFixed(2);
+      document.getElementById(`hsd-${currentSlot}`).classList.add('filled');
+      filled++;
+    }
+
+    if (filled === 2) {
+      setGeminiStatus('ok', `✓ Found MS: ${parsed.ms} L &nbsp;|&nbsp; HSD: ${parsed.hsd} L`);
+      showSlipStatus(currentSlot, 'ok', 'Gemini read both values');
+      setTimeout(closeScanner, 1400);
+    } else if (filled === 1) {
+      const found = parsed.ms ? `MS: ${parsed.ms}` : `HSD: ${parsed.hsd}`;
+      setGeminiStatus('ok', `Partial: ${found} — enter missing value manually`);
+      setTimeout(closeScanner, 2200);
+    } else {
+      setGeminiStatus('error', 'No CumVolume values found — enter manually');
+    }
+
+  } catch(err) {
+    setGeminiStatus('error', `Error: ${err.message}`);
+  }
+}
+
+function setGeminiStatus(type, msg) {
+  const el = document.getElementById('gemini-status');
+  const cls = type === 'ok' ? 'status-ok' : type === 'loading' ? 'status-loading' : 'status-err';
+  const icon = type === 'loading' ? '<span class="spinner"></span>' : '';
+  el.innerHTML = `<span class="status-pill ${cls}" style="margin-top:10px">${icon} ${msg}</span>`;
+}
+
+function showSlipStatus(slot, type, msg) {
+  const el = document.getElementById(`status-${slot}`);
+  const cls = type === 'ok' ? 'status-ok' : 'status-err';
+  el.innerHTML = `<span class="status-pill ${cls}" style="margin-top:8px">✓ ${msg}</span>`;
+}
+
+function closeScanner() {
+  document.getElementById('scanner-overlay').classList.add('hidden');
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('cam-video').style.display = 'none';
+  document.getElementById('cam-video').srcObject = null;
+}
+
+function blobToBase64(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = () => rej(new Error('File read failed'));
+    r.readAsDataURL(blob);
+  });
+}
+
+// ── Step flow ─────────────────────────────────
+
+function promptTesting() {
+  const ids = ['ms-initial','ms-final','hsd-initial','hsd-final'];
+  for (const id of ids) {
+    if (!document.getElementById(id).value) {
+      alert(`Please fill in all four values.\n\nMissing: ${id.replace('-',' ').toUpperCase()}`);
+      return;
+    }
+  }
+  const el = document.getElementById('step-testing');
+  el.classList.remove('hidden');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function setTesting(done) {
+  testingDone = done;
+  const msI = parseFloat(document.getElementById('ms-initial').value) || 0;
+  const msF = parseFloat(document.getElementById('ms-final').value) || 0;
+  const hsdI = parseFloat(document.getElementById('hsd-initial').value) || 0;
+  const hsdF = parseFloat(document.getElementById('hsd-final').value) || 0;
+  const deduct = done ? 5 : 0;
+  salesData.ms = Math.max(0, (msF - msI) - deduct);
+  salesData.hsd = Math.max(0, (hsdF - hsdI) - deduct);
+  renderSales(done);
+}
+
+function renderSales(withTesting) {
+  const note = withTesting ? ' · testing deducted (−5 L each)' : '';
+  document.getElementById('sales-label').textContent = `Today's sale${note}`;
+  document.getElementById('sales-display').innerHTML = `
+    <div class="metric-block ms">
+      <div class="metric-tag ms">MS · PETROL</div>
+      <div class="metric-val">${salesData.ms.toFixed(2)}<span class="metric-unit">L</span></div>
+    </div>
+    <div class="metric-block hsd">
+      <div class="metric-tag hsd">HSD · DIESEL</div>
+      <div class="metric-val">${salesData.hsd.toFixed(2)}<span class="metric-unit">L</span></div>
+    </div>
+  `;
+  document.getElementById('amount-block').classList.add('hidden');
+  const el = document.getElementById('step-sales');
+  el.classList.remove('hidden');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function calculateAmount() {
+  const msRate = parseFloat(document.getElementById('ms-rate').value) || 0;
+  const hsdRate = parseFloat(document.getElementById('hsd-rate').value) || 0;
+  const msAmt = salesData.ms * msRate;
+  const hsdAmt = salesData.hsd * hsdRate;
+  const total = msAmt + hsdAmt;
+  const fmt = n => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  document.getElementById('total-amount').textContent = '₹' + fmt(total);
+  document.getElementById('breakdown-text').innerHTML =
+    `MS ₹${fmt(msAmt)} &nbsp;+&nbsp; HSD ₹${fmt(hsdAmt)}`;
+  const el = document.getElementById('amount-block');
+  el.classList.remove('hidden');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function shareWhatsApp() {
+  const msRate = parseFloat(document.getElementById('ms-rate').value) || 0;
+  const hsdRate = parseFloat(document.getElementById('hsd-rate').value) || 0;
+  const fmt = n => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const msAmt = salesData.ms * msRate;
+  const hsdAmt = salesData.hsd * hsdRate;
+  const total = msAmt + hsdAmt;
+  const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  const testLine = testingDone ? '\n✅ Testing done today (−5 L deducted per product)' : '';
+  const msg = encodeURIComponent(
+`📊 *Daily Fuel Sales Report*
+📅 ${today}${testLine}
+
+⛽ *MS (Petrol)*
+   Volume : ${salesData.ms.toFixed(2)} L
+   Rate    : ₹${msRate.toFixed(2)}/L
+   Amount : ₹${fmt(msAmt)}
+
+🛢 *HSD (Diesel)*
+   Volume : ${salesData.hsd.toFixed(2)} L
+   Rate    : ₹${hsdRate.toFixed(2)}/L
+   Amount : ₹${fmt(hsdAmt)}
+
+━━━━━━━━━━━━━━━
+💰 *Total Sale: ₹${fmt(total)}*`
+  );
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+</script>
+</body>
+</html>
