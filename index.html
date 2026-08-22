@@ -534,7 +534,7 @@
       <div class="scan-line" id="scan-line"></div>
       <video id="cam-video" autoplay playsinline muted></video>
     </div>
-    <div id="gemini-status"></div>
+    <div id="ocr-status"></div>
     <div class="overlay-actions" style="margin-top:12px;">
       <button class="btn-upload" onclick="triggerUpload()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
@@ -566,7 +566,7 @@ function openScanner(slot) {
   const label = slot === 'initial' ? 'Slip 1 — Initial' : 'Slip 2 — Final';
   document.getElementById('overlay-title').textContent = `Scanning ${label}`;
   document.getElementById('overlay-sub').textContent = 'Upload photo or aim camera at the slip';
-  document.getElementById('gemini-status').innerHTML = '';
+  document.getElementById('ocr-status').innerHTML = '';
   document.getElementById('scanner-overlay').classList.remove('hidden');
   startCamera();
 }
@@ -591,7 +591,7 @@ async function captureAndSend() {
   canvas.width = video.videoWidth || 640;
   canvas.height = video.videoHeight || 480;
   canvas.getContext('2d').drawImage(video, 0, 0);
-  canvas.toBlob(blob => { if(blob) sendToGemini(blob); }, 'image/jpeg', 0.92);
+  canvas.toBlob(blob => { if(blob) sendToOCR(blob); }, 'image/jpeg', 0.92);
 }
 
 function triggerUpload() {
@@ -599,16 +599,16 @@ function triggerUpload() {
 }
 
 document.getElementById('file-input').addEventListener('change', e => {
-  if (e.target.files[0]) sendToGemini(e.target.files[0]);
+  if (e.target.files[0]) sendToOCR(e.target.files[0]);
   e.target.value = '';
 });
 
-async function sendToGemini(imageBlob) {
+async function sendToOCR(imageBlob) {
   if (BACKEND_URL === "YOUR_RENDER_URL_HERE") {
-    setGeminiStatus('error', '⚠️ Backend URL not set — edit the HTML file and replace YOUR_RENDER_URL_HERE');
+    setOCRStatus('error', '⚠️ Backend URL not set — edit the HTML file and replace YOUR_RENDER_URL_HERE');
     return;
   }
-  setGeminiStatus('loading', 'Reading slip with Gemini AI…');
+  setOCRStatus('loading', 'Reading slip with OCR…');
   try {
     const base64 = await blobToBase64(imageBlob);
     const mimeType = imageBlob.type || 'image/jpeg';
@@ -635,24 +635,24 @@ async function sendToGemini(imageBlob) {
     }
 
     if (filled === 2) {
-      setGeminiStatus('ok', `✓ Found MS: ${parsed.ms} L &nbsp;|&nbsp; HSD: ${parsed.hsd} L`);
-      showSlipStatus(currentSlot, 'ok', 'Gemini read both values');
+      setOCRStatus('ok', `✓ Found MS: ${parsed.ms} L &nbsp;|&nbsp; HSD: ${parsed.hsd} L`);
+      showSlipStatus(currentSlot, 'ok', 'OCR read both values');
       setTimeout(closeScanner, 1400);
     } else if (filled === 1) {
       const found = parsed.ms ? `MS: ${parsed.ms}` : `HSD: ${parsed.hsd}`;
-      setGeminiStatus('ok', `Partial: ${found} — enter missing value manually`);
+      setOCRStatus('ok', `Partial: ${found} — enter missing value manually`);
       setTimeout(closeScanner, 2200);
     } else {
-      setGeminiStatus('error', 'No CumVolume values found — enter manually');
+      setOCRStatus('error', 'No CumVolume values found — enter manually');
     }
 
   } catch(err) {
-    setGeminiStatus('error', `Error: ${err.message}`);
+    setOCRStatus('error', `Error: ${err.message}`);
   }
 }
 
-function setGeminiStatus(type, msg) {
-  const el = document.getElementById('gemini-status');
+function setOCRStatus(type, msg) {
+  const el = document.getElementById('ocr-status');
   const cls = type === 'ok' ? 'status-ok' : type === 'loading' ? 'status-loading' : 'status-err';
   const icon = type === 'loading' ? '<span class="spinner"></span>' : '';
   el.innerHTML = `<span class="status-pill ${cls}" style="margin-top:10px">${icon} ${msg}</span>`;
