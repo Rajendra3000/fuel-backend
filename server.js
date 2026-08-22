@@ -5,44 +5,72 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OCR_API_KEY = process.env.OCR_API_KEY;
 
 app.post('/scan', async (req, res) => {
   try {
     const { imageBase64, mimeType } = req.body;
     if (!imageBase64) return res.status(400).json({ error: 'No image provided' });
 
-    const prompt = `This is a fuel pump slip or dip report. Find the CumVolume (cumulative volume) values for MS (petrol/mogas) and HSD (diesel) products.
-Return ONLY a JSON object like this, no explanation:
-{"ms": <number or null>, "hsd": <number or null>}
-If a value is not found, use null. Values are in litres (usually large numbers like 12450.75).`;
+    // Send image to OCR.space
+    const ocrResponse = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apikey: OCR_API_KEY,
+        base64Image: `data:${mimeType || 'image/jpeg'};base64,${imageBase64}`,
+        language: 'eng',
+        isOverlayRequired: false,
+        detectOrientation: true,
+        scale: true,
+        OCREngine: 2
+      })
+    });
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } }
-            ]
-          }],
-          generationConfig: { temperature: 0, maxOutputTokens: 200 }
-        })
+    const ocrData = await ocrResponse.json();
+    if (ocrData.IsErroredOnProcessing) {
+      throw new Error(ocrData.ErrorMessage?.[0] || 'OCR processing error');
+    }
+
+    const fullText = ocrData.ParsedResults?.[0]?.ParsedText || '';
+    const lines = fullText.split('\n');
+
+    let ms = null, hsd = null;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lineLower = line.toLowerCase();
+
+      if (/cum\s*vol/i.test(line)) {
+        // Try to find number on same line
+        const nums = line.match(/\d{3,}\.?\d*/g);
+        const found = nums ? parseFloat(nums[nums.length - 1]) : null;
+
+        // Try next line if not found on same line
+        let val = found;
+        if (!val && i + 1 < lines.length) {
+          const nextNums = lines[i + 1].match(/\d{3,}\.?\d*/g);
+          if (nextNums) val = parseFloat(nextNums[0]);
+        }
+
+        if (val) {
+          // Determine if MS or HSD by looking at surrounding context
+          const context = lines.slice(Math.max(0, i - 4), i + 1).join(' ').toLowerCase();
+          if (/ms|petrol|mogas|motor\s*spirit/.test(context) && ms === null) {
+            ms = val;
+          } else if (/hsd|diesel|high\s*speed/.test(context) && hsd === null) {
+            hsd = val;
+          } else if (ms === null) {
+            ms = val;
+          } else if (hsd === null) {
+            hsd = val;
+          }
+        }
       }
-    );
+    }
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || 'Gemini error');
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const jsonMatch = text.match(/\{[\s\S]*?\}/);
-    if (!jsonMatch) throw new Error('No JSON found in response');
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    res.json({ ms: parsed.ms ?? null, hsd: parsed.hsd ?? null });
+    // Fallback: if only one found, try scanning all large numbers near CumVol
+    res.json({ ms: ms ?? null, hsd: hsd ?? null, rawText: fullText });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
