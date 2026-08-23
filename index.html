@@ -497,7 +497,9 @@ function saveSettlement(doShare){
     payCash:cash,payOnline:online,payCard:card,payDue:due,
     collected,short:saleData.total-collected,
     notes:document.getElementById('settle-notes').value,
-    testing:document.getElementById('testing-check').checked
+    testing:document.getElementById('testing-check').checked,
+    msFinalCumVol: parseFloat(document.getElementById('ms-final').value)||0,
+    hsdFinalCumVol: parseFloat(document.getElementById('hsd-final').value)||0
   };
   addSettlement(record);
   if(doShare) shareWA(record);
@@ -506,13 +508,40 @@ function saveSettlement(doShare){
 }
 
 function resetForm(){
-  ['ms-initial','ms-final','hsd-initial','hsd-final','pay-cash','pay-online','pay-card','pay-due','settle-notes'].forEach(id=>document.getElementById(id).value='');
+  // Remember final values to pre-fill next initial
+  const lastMsFinal = document.getElementById('ms-final').value;
+  const lastHsdFinal = document.getElementById('hsd-final').value;
+  const lastDu = document.getElementById('sel-du').value;
+  ['ms-final','pay-cash','pay-online','pay-card','pay-due','settle-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('sel-worker').value='';
   document.getElementById('testing-check').checked=false;
   ['sale-result-card','payment-card'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   ['match-result','status-initial','status-final'].forEach(id=>document.getElementById(id).innerHTML='');
   saleData={ms:0,hsd:0,msAmt:0,hsdAmt:0,total:0};
+  // Auto-fill initial from previous final
+  if(lastMsFinal) { document.getElementById('ms-initial').value=lastMsFinal; document.getElementById('status-initial').innerHTML='<span class="pill pill-ok">✓ Auto-filled from previous final</span>'; }
+  if(lastHsdFinal) document.getElementById('hsd-initial').value=lastHsdFinal;
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Also auto-fill initial from last saved settlement when DU changes
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('sel-du').addEventListener('change', autoFillInitialFromLastSettlement);
+  document.getElementById('sel-shift').addEventListener('change', autoFillInitialFromLastSettlement);
+});
+
+function autoFillInitialFromLastSettlement(){
+  const du = document.getElementById('sel-du').value;
+  const all = getSettlements();
+  // Find last settlement for this DU
+  const last = all.find(s => s.du === du);
+  if(last && !document.getElementById('ms-initial').value){
+    document.getElementById('ms-initial').value = last.msVol ? (parseFloat(document.getElementById('ms-final').value)||0).toFixed(2) : '';
+    // Use stored final cumvol if available
+    if(last.msFinalCumVol) document.getElementById('ms-initial').value = last.msFinalCumVol;
+    if(last.hsdFinalCumVol) document.getElementById('hsd-initial').value = last.hsdFinalCumVol;
+    if(last.msFinalCumVol||last.hsdFinalCumVol) document.getElementById('status-initial').innerHTML='<span class="pill pill-ok">✓ Auto-filled from last '+du+' settlement</span>';
+  }
 }
 
 // RECORDS
@@ -995,6 +1024,26 @@ function openCustomerDetail(name){
         <button onclick="deleteCustomer('${name.replace(/'/g,"\\'")}');document.getElementById('cust-detail-overlay').remove();" class="btn btn-danger btn-sm" style="flex:1;">🗑 Delete All</button>
       </div>
 
+      <!-- Quick Add Due -->
+      <div style="background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.2);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.06em;margin-bottom:10px;">+ ADD DUE</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input type="number" id="quick-due-amount" class="form-input" placeholder="Amount ₹" style="height:36px;font-size:13px;">
+          <input type="text" id="quick-due-notes" class="form-input" placeholder="Notes (MS/HSD...)" style="height:36px;font-size:13px;">
+        </div>
+        <button onclick="quickAddDue('${name.replace(/'/g,"\\'")}')" class="btn btn-danger" style="height:36px;font-size:13px;">📤 Add Due Entry</button>
+      </div>
+
+      <!-- Quick Add Payment -->
+      <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:var(--radius);padding:12px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:#22c55e;letter-spacing:0.06em;margin-bottom:10px;">✓ RECORD PAYMENT</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input type="number" id="quick-pay-amount" class="form-input" placeholder="Amount ₹" style="height:36px;font-size:13px;">
+          <input type="text" id="quick-pay-notes" class="form-input" placeholder="Remarks..." style="height:36px;font-size:13px;">
+        </div>
+        <button onclick="quickAddPayment('${name.replace(/'/g,"\\'")}')" class="btn btn-success" style="height:36px;font-size:13px;">📥 Record Payment</button>
+      </div>
+
       <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--dim);margin-bottom:10px;">TRANSACTION HISTORY</div>
       ${entries.map(e=>{
         const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
@@ -1142,4 +1191,53 @@ window.addEventListener('DOMContentLoaded', () => {
     analysisPage.appendChild(backupCard);
   }
 }, { once: true });
+</script>
+<script>
+// Quick due/payment from customer detail overlay
+function quickAddDue(name){
+  const amount = parseFloat(document.getElementById('quick-due-amount').value)||0;
+  const notes = document.getElementById('quick-due-notes').value.trim();
+  if(!amount){alert('Enter an amount');return;}
+  addKhataEntryData({
+    id:Date.now(), type:'due', customerName:name,
+    amount, date:new Date().toISOString().split('T')[0],
+    notes, worker:'', phone:''
+  });
+  document.getElementById('quick-due-amount').value='';
+  document.getElementById('quick-due-notes').value='';
+  // Refresh overlay
+  document.getElementById('cust-detail-overlay').remove();
+  openCustomerDetail(name);
+}
+
+function quickAddPayment(name){
+  const amount = parseFloat(document.getElementById('quick-pay-amount').value)||0;
+  const notes = document.getElementById('quick-pay-notes').value.trim();
+  if(!amount){alert('Enter an amount');return;}
+  addKhataEntryData({
+    id:Date.now(), type:'payment', customerName:name,
+    amount, date:new Date().toISOString().split('T')[0],
+    notes, worker:'', phone:''
+  });
+  document.getElementById('quick-pay-amount').value='';
+  document.getElementById('quick-pay-notes').value='';
+  // Refresh overlay
+  document.getElementById('cust-detail-overlay').remove();
+  openCustomerDetail(name);
+}
+
+// Auto-fill initial slip from last DU settlement on page load
+window.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>{
+    const du = document.getElementById('sel-du')?.value;
+    if(!du) return;
+    const all = getSettlements();
+    const last = all.find(s => s.du === du);
+    if(last && last.msFinalCumVol && !document.getElementById('ms-initial').value){
+      document.getElementById('ms-initial').value = last.msFinalCumVol.toFixed(2);
+      document.getElementById('hsd-initial').value = last.hsdFinalCumVol.toFixed(2);
+      document.getElementById('status-initial').innerHTML = '<span class="pill pill-ok">✓ Auto-filled from last '+du+' settlement ('+last.date+')</span>';
+    }
+  }, 600);
+});
 </script>
