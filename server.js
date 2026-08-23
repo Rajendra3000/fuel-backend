@@ -7,14 +7,12 @@ app.use(express.json({ limit: '10mb' }));
 
 const OCR_API_KEY = process.env.OCR_API_KEY;
 
-// Each DU has its nozzles wired to different products.
-// DU1: Nozzle 1 = HSD, Nozzle 2 = MS
-// DU2: Nozzle 1 = MS,  Nozzle 2 = HSD
+// Based on actual slip: Nozzle No1 = MS, Nozzle No2 = HSD (same for all DUs)
+// Change below if your DU wiring is different
 const DU_NOZZLE_MAP = {
-  DU1: { 1: 'hsd', 2: 'ms' },
+  DU1: { 1: 'ms', 2: 'hsd' },
   DU2: { 1: 'ms', 2: 'hsd' }
 };
-// Fallback used if an unrecognized/missing DU is sent, so scanning still works.
 const DEFAULT_NOZZLE_MAP = { 1: 'ms', 2: 'hsd' };
 
 app.post('/scan', async (req, res) => {
@@ -115,6 +113,8 @@ app.post('/scan', async (req, res) => {
       }
     }
 
+    console.log('OCR Text:', fullText);
+    console.log('Extracted:', { ms, hsd });
     res.json({ ms: ms ?? null, hsd: hsd ?? null, rawText: fullText });
 
   } catch (err) {
