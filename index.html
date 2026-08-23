@@ -711,3 +711,353 @@ function fmt(n){return(n||0).toLocaleString('en-IN',{minimumFractionDigits:0,max
 </script>
 </body>
 </html>
+
+<!-- INJECT KHATA STYLES & PAGE via script -->
+<script>
+// ── INJECT KHATA NAV BUTTON ──────────────────
+document.querySelector('.bottom-nav').innerHTML += `
+  <button class="nav-btn" onclick="showPage('khata',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="20" height="20"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/><circle cx="12" cy="12" r="10"/></svg>
+    Khata
+  </button>`;
+
+// ── INJECT KHATA PAGE ────────────────────────
+const khataPage = document.createElement('div');
+khataPage.className = 'page';
+khataPage.id = 'page-khata';
+khataPage.innerHTML = `
+  <div class="page-title">📒 Khata Book</div>
+  <div class="page-sub">Customer due bills tracker</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchKhataTab('list',this)">Customers</button>
+    <button class="tab" onclick="switchKhataTab('add',this)">+ Add Entry</button>
+    <button class="tab" onclick="switchKhataTab('history',this)">History</button>
+  </div>
+
+  <!-- TAB: CUSTOMER LIST -->
+  <div id="khata-list-tab">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input type="text" class="form-input" id="khata-search" placeholder="🔍 Search customer..." oninput="renderKhataList()" style="flex:1;">
+    </div>
+    <div id="khata-summary-bar" style="margin-bottom:12px;"></div>
+    <div id="khata-customer-list"></div>
+  </div>
+
+  <!-- TAB: ADD ENTRY -->
+  <div id="khata-add-tab" class="hidden">
+    <div class="card">
+      <div class="card-title">New Due Entry</div>
+      <div class="form-group">
+        <label class="form-label">Customer Name</label>
+        <input type="text" class="form-input" id="khata-cust-name" placeholder="Enter customer name" list="khata-existing-names">
+        <datalist id="khata-existing-names"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (optional)</label>
+        <input type="text" class="form-input" id="khata-cust-phone" placeholder="9876543210">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (₹)</label>
+          <input type="number" class="form-input" id="khata-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" id="khata-date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Product / Notes</label>
+        <input type="text" class="form-input" id="khata-notes" placeholder="e.g. MS 5L, Diesel 10L...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Worker who gave credit</label>
+        <select class="form-input" id="khata-worker"></select>
+      </div>
+      <button class="btn btn-primary" onclick="addKhataEntry()">+ Add Due Entry</button>
+    </div>
+
+    <div class="card" style="border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.05);">
+      <div class="card-title" style="color:#22c55e;">Record Payment Received</div>
+      <div class="form-group">
+        <label class="form-label">Customer Name</label>
+        <input type="text" class="form-input" id="khata-pay-name" placeholder="Customer who paid" list="khata-existing-names-pay">
+        <datalist id="khata-existing-names-pay"></datalist>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount Paid (₹)</label>
+          <input type="number" class="form-input" id="khata-pay-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" id="khata-pay-date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input type="text" class="form-input" id="khata-pay-notes" placeholder="Payment method, remarks...">
+      </div>
+      <button class="btn btn-success" onclick="addKhataPayment()">✓ Record Payment</button>
+    </div>
+  </div>
+
+  <!-- TAB: HISTORY -->
+  <div id="khata-history-tab" class="hidden">
+    <div id="khata-history-list"></div>
+  </div>
+`;
+document.body.insertBefore(khataPage, document.querySelector('.bottom-nav'));
+
+// ── ADJUST NAV for 5 items ───────────────────
+document.querySelector('.bottom-nav').style.cssText += 'overflow-x:auto;';
+
+// ── KHATA STORAGE ────────────────────────────
+function getKhataEntries(){return JSON.parse(localStorage.getItem('fs_khata')||'[]');}
+function saveKhataEntries(list){localStorage.setItem('fs_khata',JSON.stringify(list));}
+function addKhataEntryData(entry){const l=getKhataEntries();l.unshift(entry);saveKhataEntries(l);}
+
+// ── KHATA TABS ───────────────────────────────
+function switchKhataTab(tab, btn){
+  document.querySelectorAll('#page-khata .tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('khata-list-tab').classList.toggle('hidden', tab!=='list');
+  document.getElementById('khata-add-tab').classList.toggle('hidden', tab!=='add');
+  document.getElementById('khata-history-tab').classList.toggle('hidden', tab!=='history');
+  if(tab==='list') renderKhataList();
+  if(tab==='add') setupKhataAdd();
+  if(tab==='history') renderKhataHistory();
+}
+
+function setupKhataAdd(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('khata-date').value=today;
+  document.getElementById('khata-pay-date').value=today;
+  // Fill worker dropdown
+  const sel=document.getElementById('khata-worker');
+  sel.innerHTML='<option value="">Select worker</option>';
+  getEmployees().forEach(e=>{const o=document.createElement('option');o.value=e.name;o.textContent=e.name;sel.appendChild(o);});
+  // Fill customer datalist
+  const names=[...new Set(getKhataEntries().map(e=>e.customerName))];
+  document.getElementById('khata-existing-names').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+  document.getElementById('khata-existing-names-pay').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+}
+
+// ── ADD DUE ENTRY ────────────────────────────
+function addKhataEntry(){
+  const name=document.getElementById('khata-cust-name').value.trim();
+  const amount=parseFloat(document.getElementById('khata-amount').value)||0;
+  const date=document.getElementById('khata-date').value;
+  if(!name){alert('Enter customer name');return;}
+  if(!amount){alert('Enter amount');return;}
+  addKhataEntryData({
+    id:Date.now(),
+    type:'due',
+    customerName:name,
+    phone:document.getElementById('khata-cust-phone').value.trim(),
+    amount,date,
+    notes:document.getElementById('khata-notes').value.trim(),
+    worker:document.getElementById('khata-worker').value
+  });
+  document.getElementById('khata-cust-name').value='';
+  document.getElementById('khata-amount').value='';
+  document.getElementById('khata-notes').value='';
+  document.getElementById('khata-cust-phone').value='';
+  alert('✓ Due entry added for '+name);
+  renderKhataList();
+}
+
+// ── ADD PAYMENT ───────────────────────────────
+function addKhataPayment(){
+  const name=document.getElementById('khata-pay-name').value.trim();
+  const amount=parseFloat(document.getElementById('khata-pay-amount').value)||0;
+  const date=document.getElementById('khata-pay-date').value;
+  if(!name){alert('Enter customer name');return;}
+  if(!amount){alert('Enter amount paid');return;}
+  addKhataEntryData({
+    id:Date.now(),
+    type:'payment',
+    customerName:name,
+    amount,date,
+    notes:document.getElementById('khata-pay-notes').value.trim(),
+    worker:''
+  });
+  document.getElementById('khata-pay-name').value='';
+  document.getElementById('khata-pay-amount').value='';
+  document.getElementById('khata-pay-notes').value='';
+  alert('✓ Payment recorded for '+name);
+  renderKhataList();
+}
+
+// ── CUSTOMER BALANCE CALCULATOR ───────────────
+function getCustomerBalances(search=''){
+  const entries=getKhataEntries();
+  const customers={};
+  entries.forEach(e=>{
+    const n=e.customerName;
+    if(!customers[n]) customers[n]={name:n,phone:e.phone||'',due:0,paid:0,lastDate:e.date,entries:[]};
+    if(e.type==='due') customers[n].due+=e.amount;
+    else customers[n].paid+=e.amount;
+    if(e.date>customers[n].lastDate) customers[n].lastDate=e.date;
+    customers[n].entries.push(e);
+    if(e.phone) customers[n].phone=e.phone;
+  });
+  let list=Object.values(customers).map(c=>({...c,balance:c.due-c.paid}));
+  if(search) list=list.filter(c=>c.name.toLowerCase().includes(search.toLowerCase()));
+  return list.sort((a,b)=>b.balance-a.balance);
+}
+
+// ── RENDER CUSTOMER LIST ──────────────────────
+function renderKhataList(){
+  const search=document.getElementById('khata-search')?.value||'';
+  const customers=getCustomerBalances(search);
+  const totalDue=customers.reduce((s,c)=>s+(c.balance>0?c.balance:0),0);
+  const totalPaid=customers.reduce((s,c)=>s+(c.balance<0?Math.abs(c.balance):0),0);
+
+  document.getElementById('khata-summary-bar').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:var(--radius);padding:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.06em;margin-bottom:4px;">TOTAL DUE</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text);">₹${fmt(totalDue)}</div>
+      </div>
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:12px;">
+        <div style="font-size:11px;font-weight:700;color:#22c55e;letter-spacing:0.06em;margin-bottom:4px;">CUSTOMERS</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text);">${customers.filter(c=>c.balance>0).length}</div>
+      </div>
+    </div>`;
+
+  const el=document.getElementById('khata-customer-list');
+  if(!customers.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📒</div><div class="empty-text">No customers yet — add a due entry</div></div>';
+    return;
+  }
+  el.innerHTML=customers.map(c=>{
+    const bal=c.balance;
+    const statusColor=bal>0?'var(--red)':bal<0?'var(--orange)':'#22c55e';
+    const statusText=bal>0?`Due ₹${fmt(bal)}`:bal<0?`Advance ₹${fmt(Math.abs(bal))}`:'✓ Clear';
+    const d=new Date(c.lastDate+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    const init=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer;" onclick="openCustomerDetail('${c.name.replace(/'/g,"\\'")}')">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--red);flex-shrink:0;">${init}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;">${c.name}</div>
+          <div style="font-size:12px;color:var(--muted);">${c.phone||'No phone'} · Last: ${d}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${statusColor};">${statusText}</div>
+          <div style="font-size:11px;color:var(--muted);">Total: ₹${fmt(c.due)} given</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CUSTOMER DETAIL OVERLAY ───────────────────
+function openCustomerDetail(name){
+  const entries=getKhataEntries().filter(e=>e.customerName===name).sort((a,b)=>b.date.localeCompare(a.date));
+  const due=entries.filter(e=>e.type==='due').reduce((s,e)=>s+e.amount,0);
+  const paid=entries.filter(e=>e.type==='payment').reduce((s,e)=>s+e.amount,0);
+  const balance=due-paid;
+  const phone=entries.find(e=>e.phone)?.phone||'';
+
+  const overlay=document.createElement('div');
+  overlay.className='overlay';
+  overlay.id='cust-detail-overlay';
+  overlay.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;">${name}</div>
+          <div style="font-size:12px;color:var(--muted);">${phone||'No phone'}</div>
+        </div>
+        <button onclick="document.getElementById('cust-detail-overlay').remove()" style="background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 12px;cursor:pointer;font-family:'Inter',sans-serif;">✕ Close</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);border-radius:var(--radius);padding:10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:3px;">GIVEN</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;">₹${fmt(due)}</div>
+        </div>
+        <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:var(--radius);padding:10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:#22c55e;margin-bottom:3px;">PAID</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;">₹${fmt(paid)}</div>
+        </div>
+        <div style="background:${balance>0?'rgba(248,113,113,0.1)':balance<0?'rgba(251,146,60,0.1)':'rgba(34,197,94,0.1)'};border:1px solid ${balance>0?'rgba(248,113,113,0.2)':balance<0?'rgba(251,146,60,0.2)':'rgba(34,197,94,0.2)'};border-radius:var(--radius);padding:10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:${balance>0?'var(--red)':balance<0?'var(--orange)':'#22c55e'};margin-bottom:3px;">BALANCE</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${balance>0?'var(--red)':balance<0?'var(--orange)':'#22c55e'};">₹${fmt(Math.abs(balance))}</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button onclick="shareKhataWA('${name.replace(/'/g,"\\'")}','${phone}')" class="btn btn-wa btn-sm" style="flex:1;">📤 WhatsApp</button>
+        <button onclick="deleteCustomer('${name.replace(/'/g,"\\'")}');document.getElementById('cust-detail-overlay').remove();" class="btn btn-danger btn-sm" style="flex:1;">🗑 Delete All</button>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--dim);margin-bottom:10px;">TRANSACTION HISTORY</div>
+      ${entries.map(e=>{
+        const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+        const isDue=e.type==='due';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="width:32px;height:32px;border-radius:50%;background:${isDue?'rgba(248,113,113,0.1)':'rgba(34,197,94,0.1)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${isDue?'📤':'📥'}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:500;color:${isDue?'var(--red)':'#22c55e'};">${isDue?'Due given':'Payment received'}</div>
+            <div style="font-size:11px;color:var(--muted);">${d}${e.notes?' · '+e.notes:''}${e.worker?' · '+e.worker:''}</div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:${isDue?'var(--red)':'#22c55e'};">${isDue?'-':'+'} ₹${fmt(e.amount)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function deleteCustomer(name){
+  if(!confirm('Delete ALL entries for '+name+'?')) return;
+  saveKhataEntries(getKhataEntries().filter(e=>e.customerName!==name));
+  renderKhataList();
+}
+
+// ── HISTORY TAB ───────────────────────────────
+function renderKhataHistory(){
+  const entries=getKhataEntries().sort((a,b)=>b.date.localeCompare(a.date));
+  const el=document.getElementById('khata-history-list');
+  if(!entries.length){el.innerHTML='<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">No entries yet</div></div>';return;}
+  el.innerHTML=entries.map(e=>{
+    const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const isDue=e.type==='due';
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:${isDue?'rgba(248,113,113,0.1)':'rgba(34,197,94,0.1)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${isDue?'📤':'📥'}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;">${e.customerName}</div>
+        <div style="font-size:12px;color:var(--muted);">${d}${e.notes?' · '+e.notes:''}${e.worker?' · by '+e.worker:''}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${isDue?'var(--red)':'#22c55e'};">${isDue?'-':'+'} ₹${fmt(e.amount)}</div>
+        <div style="font-size:11px;color:var(--muted);">${isDue?'Due':'Paid'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── WHATSAPP SHARE FOR CUSTOMER ───────────────
+function shareKhataWA(name, phone){
+  const entries=getKhataEntries().filter(e=>e.customerName===name).sort((a,b)=>a.date.localeCompare(b.date));
+  const due=entries.filter(e=>e.type==='due').reduce((s,e)=>s+e.amount,0);
+  const paid=entries.filter(e=>e.type==='payment').reduce((s,e)=>s+e.amount,0);
+  const balance=due-paid;
+  const history=entries.map(e=>{
+    const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    return `${e.type==='due'?'📤':'📥'} ${d}: ${e.type==='due'?'Due':'Paid'} ₹${fmt(e.amount)}${e.notes?' ('+e.notes+')':''}`;
+  }).join('\n');
+  const target=phone?`https://wa.me/91${phone}?text=`:'https://wa.me/?text=';
+  const msg=encodeURIComponent(`📒 *Khata Statement — ${name}*\n\n${history}\n\n━━━━━━━━━━━━━\n💸 Total Given: ₹${fmt(due)}\n✅ Total Paid: ₹${fmt(paid)}\n${balance>0?`⚠️ *Balance Due: ₹${fmt(balance)}*`:balance<0?`➕ Advance: ₹${fmt(Math.abs(balance))}`:'✅ *Account Clear*'}\n\n_Rajendra Fuel Station_`);
+  window.open(target+msg,'_blank');
+}
+
+// ── INIT KHATA ON PAGE LOAD ───────────────────
+window.addEventListener('DOMContentLoaded', ()=>{
+  renderKhataList();
+}, {once:false});
+setTimeout(()=>renderKhataList(), 500);
+</script>
