@@ -475,7 +475,7 @@ function matchTotal(){
 }
 
 // SAVE SETTLEMENT
-function saveSettlement(){
+function saveSettlement(doShare){
   const workerId=document.getElementById('sel-worker').value;
   const workerName=document.getElementById('sel-worker').selectedOptions[0]?.text||'Unknown';
   if(!workerId){alert('Select a worker');return;}
@@ -500,7 +500,7 @@ function saveSettlement(){
     testing:document.getElementById('testing-check').checked
   };
   addSettlement(record);
-  shareWA(record);
+  if(doShare) shareWA(record);
   resetForm();
   alert('✓ Settlement saved for '+workerName+'!');
 }
@@ -1060,4 +1060,86 @@ window.addEventListener('DOMContentLoaded', ()=>{
   renderKhataList();
 }, {once:false});
 setTimeout(()=>renderKhataList(), 500);
+</script>
+<script>
+// ── BACKUP & RESTORE ─────────────────────────
+function backupData() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    employees: JSON.parse(localStorage.getItem('fs_employees') || '[]'),
+    settlements: JSON.parse(localStorage.getItem('fs_settlements') || '[]'),
+    khata: JSON.parse(localStorage.getItem('fs_khata') || '[]')
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'fuel-station-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restoreData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.version) throw new Error('Invalid backup file');
+        if (!confirm(`Restore backup from ${new Date(data.exportedAt).toLocaleString('en-IN')}?\n\nThis will MERGE with existing data.`)) return;
+        // Merge employees
+        const existingEmps = JSON.parse(localStorage.getItem('fs_employees') || '[]');
+        const existingEmpIds = existingEmps.map(e => e.id);
+        const newEmps = (data.employees || []).filter(e => !existingEmpIds.includes(e.id));
+        localStorage.setItem('fs_employees', JSON.stringify([...existingEmps, ...newEmps]));
+        // Merge settlements
+        const existingS = JSON.parse(localStorage.getItem('fs_settlements') || '[]');
+        const existingSIds = existingS.map(s => s.id);
+        const newS = (data.settlements || []).filter(s => !existingSIds.includes(s.id));
+        localStorage.setItem('fs_settlements', JSON.stringify([...existingS, ...newS]));
+        // Merge khata
+        const existingK = JSON.parse(localStorage.getItem('fs_khata') || '[]');
+        const existingKIds = existingK.map(k => k.id);
+        const newK = (data.khata || []).filter(k => !existingKIds.includes(k.id));
+        localStorage.setItem('fs_khata', JSON.stringify([...existingK, ...newK]));
+        alert('✓ Backup restored successfully!');
+        location.reload();
+      } catch(err) {
+        alert('Error reading backup: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ── ADD BACKUP BUTTON TO ANALYSIS PAGE ───────
+window.addEventListener('DOMContentLoaded', () => {
+  const analysisPage = document.getElementById('page-analysis');
+  if (analysisPage) {
+    const backupCard = document.createElement('div');
+    backupCard.className = 'card';
+    backupCard.style.marginTop = '12px';
+    backupCard.innerHTML = `
+      <div class="card-title">Data Backup</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Export all your data as a JSON file. Restore anytime on any device.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button class="btn btn-primary" onclick="backupData()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Download Backup
+        </button>
+        <button class="btn btn-outline" onclick="restoreData()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Restore Backup
+        </button>
+      </div>`;
+    analysisPage.appendChild(backupCard);
+  }
+}, { once: true });
 </script>
