@@ -2,773 +2,712 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fuel Sales Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fuel Station Manager</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
-  :root {
-    --bg: #0f1117;
-    --surface: #181c27;
-    --surface2: #1e2333;
-    --border: rgba(255,255,255,0.08);
-    --border-strong: rgba(255,255,255,0.15);
-    --text: #e8eaf0;
-    --text-muted: #7c8299;
-    --text-dim: #4a5068;
-    --ms: #4f9cf9;
-    --ms-bg: rgba(79,156,249,0.1);
-    --ms-border: rgba(79,156,249,0.25);
-    --hsd: #4ade80;
-    --hsd-bg: rgba(74,222,128,0.1);
-    --hsd-border: rgba(74,222,128,0.25);
-    --accent: #4f9cf9;
-    --accent-bg: rgba(79,156,249,0.12);
-    --radius: 10px;
-    --radius-sm: 7px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px 16px 60px;
-  }
-
-  .app { width: 100%; max-width: 600px; }
-
-  /* Header */
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  .header-icon {
-    width: 42px; height: 42px;
-    background: var(--accent-bg);
-    border: 1px solid var(--ms-border);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-  }
-  .header-title { font-size: 20px; font-weight: 600; color: var(--text); }
-  .header-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
-
-  /* Cards */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 14px;
-  }
-  .card-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 16px;
-  }
-
-  /* Slip blocks */
-  .slip-block {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: 12px;
-  }
-  .slip-block:last-of-type { margin-bottom: 0; }
-  .slip-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-  .slip-name {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .slip-badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 20px;
-    letter-spacing: 0.05em;
-  }
-  .badge-initial { background: rgba(250,204,21,0.12); color: #facc15; border: 1px solid rgba(250,204,21,0.2); }
-  .badge-final { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
-
-  .vol-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .vol-group label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    margin-bottom: 6px;
-  }
-  .ms-lbl { color: var(--ms); }
-  .hsd-lbl { color: var(--hsd); }
-
-  input[type="number"], input[type="text"] {
-    width: 100%;
-    height: 38px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    padding: 0 12px;
-    transition: border-color 0.15s;
-    -moz-appearance: textfield;
-  }
-  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
-  input:focus { outline: none; border-color: var(--accent); }
-  input.filled { border-color: rgba(79,156,249,0.4); background: rgba(79,156,249,0.04); }
-
-  /* Scan button */
-  .scan-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 34px;
-    padding: 0 14px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    white-space: nowrap;
-  }
-  .scan-btn:hover { background: rgba(255,255,255,0.05); border-color: var(--accent); color: var(--ms); }
-  .scan-btn svg { flex-shrink: 0; }
-
-  /* Status pill */
-  .status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    margin-top: 10px;
-  }
-  .status-ok { background: rgba(74,222,128,0.1); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
-  .status-err { background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
-  .status-loading { background: rgba(79,156,249,0.1); color: var(--ms); border: 1px solid rgba(79,156,249,0.2); }
-
-  /* Primary button */
-  .btn-primary {
-    width: 100%;
-    height: 44px;
-    border: none;
-    border-radius: var(--radius);
-    background: var(--ms);
-    color: #fff;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: opacity 0.15s, transform 0.1s;
-  }
-  .btn-primary:hover { opacity: 0.9; }
-  .btn-primary:active { transform: scale(0.98); }
-
-  /* Testing dialog */
-  .testing-card { text-align: center; }
-  .testing-q { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-  .testing-hint { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
-  .testing-btns { display: flex; gap: 10px; justify-content: center; }
-  .btn-yes {
-    height: 42px; padding: 0 36px;
-    border-radius: var(--radius);
-    border: 1px solid rgba(74,222,128,0.3);
-    background: rgba(74,222,128,0.1);
-    color: #4ade80;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px; font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .btn-yes:hover { background: rgba(74,222,128,0.18); }
-  .btn-no {
-    height: 42px; padding: 0 36px;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-muted);
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .btn-no:hover { background: rgba(255,255,255,0.04); }
-
-  /* Metrics */
-  .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .metric-block {
-    border-radius: var(--radius);
-    padding: 16px;
-  }
-  .metric-block.ms { background: var(--ms-bg); border: 1px solid var(--ms-border); }
-  .metric-block.hsd { background: var(--hsd-bg); border: 1px solid var(--hsd-border); }
-  .metric-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; margin-bottom: 6px; }
-  .metric-tag.ms { color: var(--ms); }
-  .metric-tag.hsd { color: var(--hsd); }
-  .metric-val { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; color: var(--text); }
-  .metric-unit { font-size: 13px; color: var(--text-muted); margin-left: 3px; }
-
-  /* Rate section */
-  .rate-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .rate-row:last-child { border-bottom: none; }
-  .rate-info { display: flex; align-items: center; gap: 8px; }
-  .rate-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .rate-dot.ms { background: var(--ms); }
-  .rate-dot.hsd { background: var(--hsd); }
-  .rate-name { font-size: 13px; color: var(--text-muted); }
-  .rate-input-wrap { display: flex; align-items: center; gap: 6px; }
-  .rate-symbol { font-size: 13px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
-  .rate-input-wrap input { width: 110px; text-align: right; }
-
-  /* Total */
-  .total-box {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 14px;
-  }
-  .total-label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
-  .total-breakdown { font-size: 12px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace; }
-  .total-amount { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 500; color: var(--text); }
-
-  /* WhatsApp btn */
-  .btn-whatsapp {
-    width: 100%;
-    height: 46px;
-    border: none;
-    border-radius: var(--radius);
-    background: #25D366;
-    color: #fff;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: opacity 0.15s;
-  }
-  .btn-whatsapp:hover { opacity: 0.9; }
-
-  /* Scanner overlay */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.88);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 200;
-    padding: 20px;
-  }
-  .overlay-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    width: 100%;
-    max-width: 340px;
-    text-align: center;
-  }
-  .overlay-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-  .overlay-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
-  .cam-frame {
-    width: 100%;
-    height: 180px;
-    background: #000;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 14px;
-  }
-  .cam-frame video { width: 100%; height: 100%; object-fit: cover; display: none; }
-  .scan-line {
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--ms), transparent);
-    animation: scanMove 1.8s ease-in-out infinite;
-    top: 20%;
-  }
-  @keyframes scanMove { 0%,100%{top:15%} 50%{top:80%} }
-  .cam-corner {
-    position: absolute;
-    width: 18px; height: 18px;
-    border-color: var(--ms);
-    border-style: solid;
-    border-width: 0;
-  }
-  .cam-corner.tl { top:8px; left:8px; border-top-width:2px; border-left-width:2px; border-radius: 4px 0 0 0; }
-  .cam-corner.tr { top:8px; right:8px; border-top-width:2px; border-right-width:2px; border-radius: 0 4px 0 0; }
-  .cam-corner.bl { bottom:8px; left:8px; border-bottom-width:2px; border-left-width:2px; border-radius: 0 0 0 4px; }
-  .cam-corner.br { bottom:8px; right:8px; border-bottom-width:2px; border-right-width:2px; border-radius: 0 0 4px 0; }
-
-  .overlay-actions { display: flex; gap: 8px; justify-content: center; }
-  .btn-upload {
-    display: flex; align-items: center; gap: 6px;
-    height: 36px; padding: 0 16px;
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text);
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .btn-upload:hover { background: rgba(255,255,255,0.05); }
-  .btn-cancel {
-    height: 36px; padding: 0 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: transparent;
-    color: var(--text-muted);
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    cursor: pointer;
-  }
-
-  .hidden { display: none !important; }
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-
-  /* Spinner */
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid rgba(79,156,249,0.3);
-    border-top-color: var(--ms);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    display: inline-block;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--surface3:#242840;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0;--muted:#7c8299;--dim:#4a5068;
+  --ms:#4f9cf9;--ms-bg:rgba(79,156,249,0.1);--ms-b:rgba(79,156,249,0.25);
+  --hsd:#4ade80;--hsd-bg:rgba(74,222,128,0.1);--hsd-b:rgba(74,222,128,0.25);
+  --yellow:#facc15;--red:#f87171;--orange:#fb923c;
+  --radius:10px;--radius-sm:7px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding-bottom:80px;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;gap:3px;border:none;background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:10px;cursor:pointer;transition:color 0.15s;}
+.nav-btn.active{color:var(--ms);}
+.nav-btn svg{width:20px;height:20px;}
+.page{display:none;padding:16px;max-width:600px;margin:0 auto;}
+.page.active{display:block;}
+.page-title{font-size:18px;font-weight:700;color:var(--text);}
+.page-sub{font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:20px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
+.form-group{margin-bottom:12px;}
+.form-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;display:block;}
+.form-input{width:100%;height:40px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:0 12px;-moz-appearance:textfield;}
+.form-input::-webkit-outer-spin-button,.form-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.form-input:focus{outline:none;border-color:var(--ms);}
+select.form-input{cursor:pointer;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn{height:42px;border:none;border-radius:var(--radius);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity 0.15s,transform 0.1s;width:100%;}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--ms);color:#fff;}
+.btn-success{background:#22c55e;color:#fff;}
+.btn-danger{background:#ef4444;color:#fff;}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text);}
+.btn-wa{background:#25D366;color:#fff;}
+.btn-sm{height:32px;font-size:12px;width:auto;padding:0 12px;}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.metric-card{border-radius:var(--radius);padding:14px;}
+.metric-card.ms{background:var(--ms-bg);border:1px solid var(--ms-b);}
+.metric-card.hsd{background:var(--hsd-bg);border:1px solid var(--hsd-b);}
+.metric-card.neutral{background:var(--surface2);border:1px solid var(--border);}
+.metric-tag{font-size:11px;font-weight:700;letter-spacing:0.06em;margin-bottom:5px;}
+.metric-tag.ms{color:var(--ms);}
+.metric-tag.hsd{color:var(--hsd);}
+.metric-tag.neutral{color:var(--muted);}
+.metric-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;color:var(--text);}
+.metric-unit{font-size:12px;color:var(--muted);margin-left:2px;}
+.slip-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
+.slip-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.slip-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:0.05em;}
+.badge-initial{background:rgba(250,204,21,0.12);color:var(--yellow);border:1px solid rgba(250,204,21,0.2);}
+.badge-final{background:rgba(74,222,128,0.12);color:var(--hsd);border:1px solid rgba(74,222,128,0.2);}
+.scan-btn{display:flex;align-items:center;gap:5px;height:32px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.vol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vol-label{font-size:11px;font-weight:700;letter-spacing:0.04em;margin-bottom:5px;display:block;}
+.vol-label.ms{color:var(--ms);}
+.vol-label.hsd{color:var(--hsd);}
+.pay-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pay-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.pay-label{font-size:13px;color:var(--muted);flex:1;}
+.pay-input{width:130px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;padding:0 10px;text-align:right;-moz-appearance:textfield;}
+.pay-input::-webkit-outer-spin-button,.pay-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.pay-input:focus{outline:none;border-color:var(--ms);}
+.result-box{border-radius:var(--radius);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
+.result-ok{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);}
+.result-short{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);}
+.result-excess{background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.25);}
+.result-label{font-size:12px;color:var(--muted);}
+.result-amount{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;}
+.result-ok .result-amount{color:#22c55e;}
+.result-short .result-amount{color:var(--red);}
+.result-excess .result-amount{color:var(--orange);}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;margin-top:8px;}
+.pill-ok{background:rgba(74,222,128,0.1);color:var(--hsd);border:1px solid rgba(74,222,128,0.2);}
+.pill-err{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.2);}
+.pill-info{background:rgba(79,156,249,0.1);color:var(--ms);border:1px solid rgba(79,156,249,0.2);}
+.spinner{width:14px;height:14px;border:2px solid rgba(79,156,249,0.3);border-top-color:var(--ms);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:340px;text-align:center;}
+.overlay-title{font-size:15px;font-weight:600;margin-bottom:4px;}
+.overlay-sub{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.cam-frame{width:100%;height:170px;background:#000;border-radius:var(--radius);border:1px solid var(--border);position:relative;overflow:hidden;margin-bottom:12px;}
+.cam-frame video{width:100%;height:100%;object-fit:cover;display:none;}
+.scan-line{position:absolute;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--ms),transparent);animation:scanMove 1.8s ease-in-out infinite;top:20%;}
+@keyframes scanMove{0%,100%{top:15%}50%{top:80%}}
+.cam-corner{position:absolute;width:16px;height:16px;border-color:var(--ms);border-style:solid;border-width:0;}
+.cam-corner.tl{top:7px;left:7px;border-top-width:2px;border-left-width:2px;border-radius:3px 0 0 0;}
+.cam-corner.tr{top:7px;right:7px;border-top-width:2px;border-right-width:2px;border-radius:0 3px 0 0;}
+.cam-corner.bl{bottom:7px;left:7px;border-bottom-width:2px;border-left-width:2px;border-radius:0 0 0 3px;}
+.cam-corner.br{bottom:7px;right:7px;border-bottom-width:2px;border-right-width:2px;border-radius:0 0 3px 0;}
+.overlay-btns{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+.btn-upload{display:flex;align-items:center;gap:5px;height:34px;padding:0 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
+.btn-cancel-sm{height:34px;padding:0 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
+.record-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;}
+.record-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.record-name{font-size:14px;font-weight:600;}
+.record-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.record-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;}
+.tag-short{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.2);}
+.tag-ok{background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.2);}
+.tag-due{background:rgba(251,146,60,0.12);color:var(--orange);border:1px solid rgba(251,146,60,0.2);}
+.tag-info{background:rgba(79,156,249,0.12);color:var(--ms);border:1px solid rgba(79,156,249,0.2);}
+.emp-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.emp-avatar{width:40px;height:40px;border-radius:50%;background:var(--ms-bg);border:1px solid var(--ms-b);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ms);flex-shrink:0;}
+.emp-name{font-size:14px;font-weight:600;}
+.emp-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--surface2);border-radius:var(--radius);padding:4px;}
+.tab{flex:1;height:34px;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-size:13px;color:var(--muted);}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.hidden{display:none!important;}
 </style>
 </head>
 <body>
 
-<div class="app">
+<!-- PAGE: SETTLEMENT -->
+<div class="page active" id="page-settle">
+  <div class="page-title">⛽ Settlement</div>
+  <div class="page-sub" id="settle-date-label"></div>
 
-  <!-- Header -->
-  <div class="header">
-    <div class="header-icon">⛽</div>
-    <div>
-      <div class="header-title">Fuel Sales Tracker</div>
-      <div class="header-sub">Daily MS & HSD volume report</div>
+  <div class="card">
+    <div class="card-title">Worker & Shift</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Worker</label>
+        <select class="form-input" id="sel-worker"><option value="">Select worker</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Shift</label>
+        <select class="form-input" id="sel-shift">
+          <option value="day">☀️ Day</option>
+          <option value="night">🌙 Night</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Dispensing Unit</label>
+        <select class="form-input" id="sel-du">
+          <option value="DU1">DU 1</option>
+          <option value="DU2">DU 2</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="settle-date-input">
+      </div>
     </div>
   </div>
 
-  <!-- Step 1: Slip scanning -->
-  <div class="card" id="step-volumes">
-    <div class="card-label">Step 1 — Scan or enter CumVolume from both slips</div>
-
-    <!-- Slip 1 -->
+  <div class="card">
+    <div class="card-title">CumVolume — Scan or Enter</div>
     <div class="slip-block">
       <div class="slip-header">
-        <div class="slip-name">
-          📄 Slip 1
-          <span class="slip-badge badge-initial">INITIAL</span>
-        </div>
+        <div class="slip-name">📄 Slip 1 <span class="badge badge-initial">INITIAL</span></div>
         <button class="scan-btn" onclick="openScanner('initial')">
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3M14 21h2M18 21h3"/></svg>
-          Scan slip
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3"/></svg>
+          Scan
         </button>
       </div>
       <div class="vol-grid">
-        <div class="vol-group">
-          <label class="ms-lbl">MS CumVolume (L)</label>
-          <input type="number" id="ms-initial" placeholder="0.00" step="0.01">
-        </div>
-        <div class="vol-group">
-          <label class="hsd-lbl">HSD CumVolume (L)</label>
-          <input type="number" id="hsd-initial" placeholder="0.00" step="0.01">
-        </div>
+        <div><span class="vol-label ms">MS CumVol (L)</span><input type="number" class="form-input" id="ms-initial" placeholder="0.00" step="0.01"></div>
+        <div><span class="vol-label hsd">HSD CumVol (L)</span><input type="number" class="form-input" id="hsd-initial" placeholder="0.00" step="0.01"></div>
       </div>
       <div id="status-initial"></div>
     </div>
-
-    <!-- Slip 2 -->
     <div class="slip-block">
       <div class="slip-header">
-        <div class="slip-name">
-          📄 Slip 2
-          <span class="slip-badge badge-final">FINAL</span>
-        </div>
+        <div class="slip-name">📄 Slip 2 <span class="badge badge-final">FINAL</span></div>
         <button class="scan-btn" onclick="openScanner('final')">
-          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3M14 21h2M18 21h3"/></svg>
-          Scan slip
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3"/></svg>
+          Scan
         </button>
       </div>
       <div class="vol-grid">
-        <div class="vol-group">
-          <label class="ms-lbl">MS CumVolume (L)</label>
-          <input type="number" id="ms-final" placeholder="0.00" step="0.01">
-        </div>
-        <div class="vol-group">
-          <label class="hsd-lbl">HSD CumVolume (L)</label>
-          <input type="number" id="hsd-final" placeholder="0.00" step="0.01">
-        </div>
+        <div><span class="vol-label ms">MS CumVol (L)</span><input type="number" class="form-input" id="ms-final" placeholder="0.00" step="0.01"></div>
+        <div><span class="vol-label hsd">HSD CumVol (L)</span><input type="number" class="form-input" id="hsd-final" placeholder="0.00" step="0.01"></div>
       </div>
       <div id="status-final"></div>
     </div>
-
-    <button class="btn-primary" onclick="promptTesting()">
-      ✓ Done — Calculate today's sale
-    </button>
-  </div>
-
-  <!-- Step 2: Testing dialog -->
-  <div class="card testing-card hidden" id="step-testing">
-    <div class="testing-q">🔬 Is testing done today?</div>
-    <div class="testing-hint">If yes, 5 litres will be deducted from each product's sale volume.</div>
-    <div class="testing-btns">
-      <button class="btn-yes" onclick="setTesting(true)">Yes, deduct 5L</button>
-      <button class="btn-no" onclick="setTesting(false)">No</button>
-    </div>
-  </div>
-
-  <!-- Step 3: Sales display + rate + calculate -->
-  <div class="card hidden" id="step-sales">
-    <div class="card-label" id="sales-label">Today's sale</div>
-    <div class="metric-grid" id="sales-display"></div>
-
     <div class="divider"></div>
-    <div class="card-label" style="margin-bottom:12px;">Rate per litre — edit if changed</div>
-
-    <div class="rate-row">
-      <div class="rate-info">
-        <div class="rate-dot ms"></div>
-        <div class="rate-name">MS · Petrol</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" style="color:var(--ms)">MS Rate (₹/L)</label>
+        <input type="number" class="form-input" id="ms-rate" value="115.54" step="0.01">
       </div>
-      <div class="rate-input-wrap">
-        <span class="rate-symbol">₹</span>
-        <input type="number" id="ms-rate" value="115.54" step="0.01">
+      <div class="form-group">
+        <label class="form-label" style="color:var(--hsd)">HSD Rate (₹/L)</label>
+        <input type="number" class="form-input" id="hsd-rate" value="100.56" step="0.01">
       </div>
     </div>
-    <div class="rate-row">
-      <div class="rate-info">
-        <div class="rate-dot hsd"></div>
-        <div class="rate-name">HSD · Diesel</div>
-      </div>
-      <div class="rate-input-wrap">
-        <span class="rate-symbol">₹</span>
-        <input type="number" id="hsd-rate" value="100.56" step="0.01">
-      </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <input type="checkbox" id="testing-check" style="width:16px;height:16px;cursor:pointer;">
+      <label for="testing-check" style="font-size:13px;color:var(--muted);cursor:pointer;">Testing done today (−5L each product)</label>
     </div>
+    <button class="btn btn-primary" onclick="calculateSale()">🧮 Calculate Sale</button>
+  </div>
 
-    <button class="btn-primary" onclick="calculateAmount()">
-      🧮 Calculate Amount
-    </button>
-
-    <!-- Total + WhatsApp -->
-    <div class="hidden" id="amount-block">
-      <div class="total-box">
-        <div>
-          <div class="total-label">Total Sale Amount</div>
-          <div class="total-breakdown" id="breakdown-text"></div>
-        </div>
-        <div class="total-amount" id="total-amount">₹0</div>
-      </div>
-      <button class="btn-whatsapp" onclick="shareWhatsApp()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Share on WhatsApp
-      </button>
+  <!-- Sale Result -->
+  <div class="card hidden" id="sale-result-card">
+    <div class="card-title">Sale Result</div>
+    <div class="metric-grid">
+      <div class="metric-card ms"><div class="metric-tag ms">MS SOLD</div><div class="metric-val" id="res-ms-vol">—</div></div>
+      <div class="metric-card hsd"><div class="metric-tag hsd">HSD SOLD</div><div class="metric-val" id="res-hsd-vol">—</div></div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card neutral"><div class="metric-tag neutral">MS AMOUNT</div><div class="metric-val" id="res-ms-amt">—</div></div>
+      <div class="metric-card neutral"><div class="metric-tag neutral">HSD AMOUNT</div><div class="metric-val" id="res-hsd-amt">—</div></div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:13px;color:var(--muted);">Total Sale</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600;" id="res-total">₹0</div>
     </div>
   </div>
 
+  <!-- Payment Collection -->
+  <div class="card hidden" id="payment-card">
+    <div class="card-title">Payment Collection by Worker</div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(74,222,128,0.1);">💵</div>
+      <div class="pay-label">Cash</div>
+      <input type="number" class="pay-input" id="pay-cash" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(79,156,249,0.1);">📱</div>
+      <div class="pay-label">Online / UPI</div>
+      <input type="number" class="pay-input" id="pay-online" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(250,204,21,0.1);">💳</div>
+      <div class="pay-label">Card Machine</div>
+      <input type="number" class="pay-input" id="pay-card" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(251,146,60,0.1);">🧾</div>
+      <div class="pay-label">Due Bills</div>
+      <input type="number" class="pay-input" id="pay-due" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div id="match-result"></div>
+    <div class="divider"></div>
+    <div class="form-group">
+      <label class="form-label">Notes (optional)</label>
+      <input type="text" class="form-input" id="settle-notes" placeholder="Any remarks...">
+    </div>
+    <button class="btn btn-success" onclick="saveSettlement()">✓ Save & Share Settlement</button>
+  </div>
 </div>
 
-<!-- Scanner Overlay -->
+<!-- PAGE: RECORDS -->
+<div class="page" id="page-records">
+  <div class="page-title">📋 Records</div>
+  <div class="page-sub">All worker settlements</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchRecordTab('today',this)">Today</button>
+    <button class="tab" onclick="switchRecordTab('week',this)">This Week</button>
+    <button class="tab" onclick="switchRecordTab('all',this)">All</button>
+  </div>
+  <div id="records-list"></div>
+</div>
+
+<!-- PAGE: EMPLOYEES -->
+<div class="page" id="page-employees">
+  <div class="page-title">👥 Workers</div>
+  <div class="page-sub">Manage employees, track dues & shorts</div>
+  <div class="card">
+    <div class="card-title">Add Employee</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-input" id="emp-name" placeholder="Worker name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="text" class="form-input" id="emp-phone" placeholder="Optional">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addEmployee()">+ Add Worker</button>
+  </div>
+  <div id="emp-list"></div>
+</div>
+
+<!-- PAGE: ANALYSIS -->
+<div class="page" id="page-analysis">
+  <div class="page-title">📊 Analysis</div>
+  <div class="page-sub">Sales & performance overview</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchAnalysisTab('today',this)">Today</button>
+    <button class="tab" onclick="switchAnalysisTab('week',this)">Week</button>
+    <button class="tab" onclick="switchAnalysisTab('month',this)">Month</button>
+  </div>
+  <div id="analysis-content"></div>
+</div>
+
+<!-- SCANNER OVERLAY -->
 <div class="overlay hidden" id="scanner-overlay">
   <div class="overlay-box">
     <div class="overlay-title" id="overlay-title">Scanning Slip</div>
-    <div class="overlay-sub" id="overlay-sub">Upload a photo or use camera</div>
+    <div class="overlay-sub" id="overlay-sub">Upload photo of the slip</div>
     <div class="cam-frame">
-      <div class="cam-corner tl"></div>
-      <div class="cam-corner tr"></div>
-      <div class="cam-corner bl"></div>
-      <div class="cam-corner br"></div>
-      <div class="scan-line" id="scan-line"></div>
+      <div class="cam-corner tl"></div><div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div><div class="cam-corner br"></div>
+      <div class="scan-line"></div>
       <video id="cam-video" autoplay playsinline muted></video>
     </div>
     <div id="ocr-status"></div>
-    <div class="overlay-actions" style="margin-top:12px;">
-      <button class="btn-upload" onclick="triggerUpload()">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-        Upload photo
-      </button>
-      <button class="btn-cancel" onclick="closeScanner()">Cancel</button>
+    <div class="overlay-btns">
+      <button class="btn-upload" onclick="triggerUpload()">📷 Upload photo</button>
+      <button class="btn-cancel-sm" onclick="closeScanner()">Cancel</button>
     </div>
     <input type="file" id="file-input" accept="image/*" style="display:none">
   </div>
 </div>
 
-<script>
-// ─────────────────────────────────────────────
-//  ⚠️  PASTE YOUR RENDER BACKEND URL BELOW
-//  Example: "https://fuel-backend-0lma.onrender.com"
-// ─────────────────────────────────────────────
-const BACKEND_URL = "https://fuel-backend-0lma.onrender.com";
-// ─────────────────────────────────────────────
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('settle',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14l2 2 4-4M3 12a9 9 0 1018 0 9 9 0 00-18 0z"/></svg>
+    Settle
+  </button>
+  <button class="nav-btn" onclick="showPage('records',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Records
+  </button>
+  <button class="nav-btn" onclick="showPage('employees',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 7a4 4 0 100 8 4 4 0 000-8z"/></svg>
+    Workers
+  </button>
+  <button class="nav-btn" onclick="showPage('analysis',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    Analysis
+  </button>
+</nav>
 
+<script>
+const BACKEND_URL = "https://fuel-backend-0lma.onrender.com";
+let saleData = {ms:0,hsd:0,msAmt:0,hsdAmt:0,total:0};
 let currentSlot = '';
 let cameraStream = null;
-let salesData = { ms: 0, hsd: 0 };
-let testingDone = false;
 
-// ── Scanner ──────────────────────────────────
+// INIT
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('settle-date-label').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('settle-date-input').value = new Date().toISOString().split('T')[0];
+  if(getEmployees().length === 0) {
+    ['Worker 1','Worker 2','Worker 3','Worker 4','Worker 5','Worker 6'].forEach((n,i) => saveEmployee({id:Date.now()+i,name:n,phone:''}));
+  }
+  loadWorkerDropdown();
+  renderEmployeeList();
+  renderRecords('today');
+  renderAnalysis('today');
+});
 
-function openScanner(slot) {
-  currentSlot = slot;
-  const label = slot === 'initial' ? 'Slip 1 — Initial' : 'Slip 2 — Final';
-  document.getElementById('overlay-title').textContent = `Scanning ${label}`;
-  document.getElementById('overlay-sub').textContent = 'Upload photo or aim camera at the slip';
-  document.getElementById('ocr-status').innerHTML = '';
+// NAV
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='records') renderRecords('today');
+  if(name==='employees') renderEmployeeList();
+  if(name==='analysis') renderAnalysis('today');
+}
+
+// STORAGE
+function getEmployees(){return JSON.parse(localStorage.getItem('fs_employees')||'[]');}
+function saveEmployee(e){const l=getEmployees();const i=l.findIndex(x=>x.id===e.id);if(i>=0)l[i]=e;else l.push(e);localStorage.setItem('fs_employees',JSON.stringify(l));}
+function deleteEmployee(id){localStorage.setItem('fs_employees',JSON.stringify(getEmployees().filter(e=>e.id!==id)));}
+function getSettlements(){return JSON.parse(localStorage.getItem('fs_settlements')||'[]');}
+function addSettlement(s){const l=getSettlements();l.unshift(s);localStorage.setItem('fs_settlements',JSON.stringify(l));}
+function deleteSettlement(id){localStorage.setItem('fs_settlements',JSON.stringify(getSettlements().filter(s=>s.id!==id)));}
+
+// EMPLOYEES
+function loadWorkerDropdown(){
+  const sel=document.getElementById('sel-worker');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Select worker</option>';
+  getEmployees().forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name;sel.appendChild(o);});
+  if(cur) sel.value=cur;
+}
+function addEmployee(){
+  const name=document.getElementById('emp-name').value.trim();
+  if(!name){alert('Enter a name');return;}
+  saveEmployee({id:Date.now(),name,phone:document.getElementById('emp-phone').value.trim()});
+  document.getElementById('emp-name').value='';
+  document.getElementById('emp-phone').value='';
+  loadWorkerDropdown();renderEmployeeList();
+}
+function renderEmployeeList(){
+  const emps=getEmployees();
+  const settlements=getSettlements();
+  const el=document.getElementById('emp-list');
+  if(!emps.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No workers added</div></div>';return;}
+  el.innerHTML=emps.map(e=>{
+    const es=settlements.filter(s=>String(s.workerId)===String(e.id));
+    const dues=es.reduce((s,r)=>s+(r.payDue||0),0);
+    const shorts=es.reduce((s,r)=>s+(r.short>0?r.short:0),0);
+    const init=e.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="emp-card">
+      <div class="emp-avatar">${init}</div>
+      <div style="flex:1">
+        <div class="emp-name">${e.name}</div>
+        <div class="emp-meta">${e.phone||'No phone'} · ${es.length} shifts</div>
+        <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;">
+          ${dues>0?`<span class="tag tag-due">Due ₹${fmt(dues)}</span>`:''}
+          ${shorts>0?`<span class="tag tag-short">Short ₹${fmt(shorts)}</span>`:''}
+          ${dues===0&&shorts===0?`<span class="tag tag-ok">✓ Clear</span>`:''}
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="delEmp(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function delEmp(id){if(confirm('Delete this worker?')){deleteEmployee(id);loadWorkerDropdown();renderEmployeeList();}}
+
+// CALCULATE SALE
+function calculateSale(){
+  const msI=parseFloat(document.getElementById('ms-initial').value)||0;
+  const msF=parseFloat(document.getElementById('ms-final').value)||0;
+  const hsdI=parseFloat(document.getElementById('hsd-initial').value)||0;
+  const hsdF=parseFloat(document.getElementById('hsd-final').value)||0;
+  const msRate=parseFloat(document.getElementById('ms-rate').value)||0;
+  const hsdRate=parseFloat(document.getElementById('hsd-rate').value)||0;
+  const testing=document.getElementById('testing-check').checked;
+  if(!msF&&!hsdF){alert('Enter CumVolume values first');return;}
+  const d=testing?5:0;
+  const msVol=Math.max(0,(msF-msI)-d);
+  const hsdVol=Math.max(0,(hsdF-hsdI)-d);
+  const msAmt=msVol*msRate;
+  const hsdAmt=hsdVol*hsdRate;
+  saleData={ms:msVol,hsd:hsdVol,msAmt,hsdAmt,total:msAmt+hsdAmt};
+  document.getElementById('res-ms-vol').innerHTML=msVol.toFixed(2)+'<span class="metric-unit">L</span>';
+  document.getElementById('res-hsd-vol').innerHTML=hsdVol.toFixed(2)+'<span class="metric-unit">L</span>';
+  document.getElementById('res-ms-amt').textContent='₹'+fmt(msAmt);
+  document.getElementById('res-hsd-amt').textContent='₹'+fmt(hsdAmt);
+  document.getElementById('res-total').textContent='₹'+fmt(saleData.total);
+  document.getElementById('sale-result-card').classList.remove('hidden');
+  document.getElementById('payment-card').classList.remove('hidden');
+  document.getElementById('sale-result-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// MATCH TOTAL
+function matchTotal(){
+  const cash=parseFloat(document.getElementById('pay-cash').value)||0;
+  const online=parseFloat(document.getElementById('pay-online').value)||0;
+  const card=parseFloat(document.getElementById('pay-card').value)||0;
+  const due=parseFloat(document.getElementById('pay-due').value)||0;
+  const collected=cash+online+card+due;
+  const diff=collected-saleData.total;
+  const el=document.getElementById('match-result');
+  if(!saleData.total){el.innerHTML='';return;}
+  if(Math.abs(diff)<1){
+    el.innerHTML=`<div class="result-box result-ok"><div class="result-label">Status</div><div class="result-amount">✓ Matched</div></div>`;
+  } else if(diff<0){
+    el.innerHTML=`<div class="result-box result-short"><div><div class="result-label">Short by</div><div style="font-size:11px;color:var(--muted)">Collected ₹${fmt(collected)} | Sale ₹${fmt(saleData.total)}</div></div><div class="result-amount">−₹${fmt(Math.abs(diff))}</div></div>`;
+  } else {
+    el.innerHTML=`<div class="result-box result-excess"><div><div class="result-label">Excess</div><div style="font-size:11px;color:var(--muted)">Collected ₹${fmt(collected)} | Sale ₹${fmt(saleData.total)}</div></div><div class="result-amount">+₹${fmt(diff)}</div></div>`;
+  }
+}
+
+// SAVE SETTLEMENT
+function saveSettlement(){
+  const workerId=document.getElementById('sel-worker').value;
+  const workerName=document.getElementById('sel-worker').selectedOptions[0]?.text||'Unknown';
+  if(!workerId){alert('Select a worker');return;}
+  if(!saleData.total){alert('Calculate sale first');return;}
+  const cash=parseFloat(document.getElementById('pay-cash').value)||0;
+  const online=parseFloat(document.getElementById('pay-online').value)||0;
+  const card=parseFloat(document.getElementById('pay-card').value)||0;
+  const due=parseFloat(document.getElementById('pay-due').value)||0;
+  const collected=cash+online+card+due;
+  const record={
+    id:Date.now(),
+    date:document.getElementById('settle-date-input').value,
+    workerId,workerName,
+    shift:document.getElementById('sel-shift').value,
+    du:document.getElementById('sel-du').value,
+    msVol:saleData.ms,hsdVol:saleData.hsd,
+    msAmt:saleData.msAmt,hsdAmt:saleData.hsdAmt,
+    totalSale:saleData.total,
+    payCash:cash,payOnline:online,payCard:card,payDue:due,
+    collected,short:saleData.total-collected,
+    notes:document.getElementById('settle-notes').value,
+    testing:document.getElementById('testing-check').checked
+  };
+  addSettlement(record);
+  shareWA(record);
+  resetForm();
+  alert('✓ Settlement saved for '+workerName+'!');
+}
+
+function resetForm(){
+  ['ms-initial','ms-final','hsd-initial','hsd-final','pay-cash','pay-online','pay-card','pay-due','settle-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sel-worker').value='';
+  document.getElementById('testing-check').checked=false;
+  ['sale-result-card','payment-card'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['match-result','status-initial','status-final'].forEach(id=>document.getElementById(id).innerHTML='');
+  saleData={ms:0,hsd:0,msAmt:0,hsdAmt:0,total:0};
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// RECORDS
+function switchRecordTab(tab,btn){
+  document.querySelectorAll('#page-records .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderRecords(tab);
+}
+function renderRecords(tab){
+  const all=getSettlements();
+  const today=new Date().toISOString().split('T')[0];
+  const weekAgo=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  let data=tab==='today'?all.filter(s=>s.date===today):tab==='week'?all.filter(s=>s.date>=weekAgo):all;
+  const el=document.getElementById('records-list');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No records yet</div></div>';return;}
+  const totSale=data.reduce((s,r)=>s+r.totalSale,0);
+  const totShort=data.reduce((s,r)=>s+(r.short>0?r.short:0),0);
+  el.innerHTML=`<div class="card">
+    <div class="stat-row"><span class="stat-label">Total Sale</span><span class="stat-val">₹${fmt(totSale)}</span></div>
+    <div class="stat-row"><span class="stat-label">Settlements</span><span class="stat-val">${data.length}</span></div>
+    ${totShort>0?`<div class="stat-row"><span class="stat-label" style="color:var(--red)">Total Short</span><span class="stat-val" style="color:var(--red)">₹${fmt(totShort)}</span></div>`:''}
+  </div>`+data.map(r=>{
+    const short=r.short>0?r.short:0;
+    const excess=r.short<0?Math.abs(r.short):0;
+    const d=new Date(r.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    return `<div class="record-item">
+      <div class="record-header">
+        <div><div class="record-name">${r.workerName}</div><div class="record-meta">${d} · ${r.shift==='day'?'☀️ Day':'🌙 Night'} · ${r.du}</div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${short>1?'var(--red)':excess>1?'var(--orange)':'#22c55e'}">₹${fmt(r.totalSale)}</div>
+      </div>
+      <div class="record-tags">
+        <span class="tag tag-info">MS ${r.msVol.toFixed(1)}L</span>
+        <span class="tag tag-info">HSD ${r.hsdVol.toFixed(1)}L</span>
+        ${r.payDue>0?`<span class="tag tag-due">Due ₹${fmt(r.payDue)}</span>`:''}
+        ${short>1?`<span class="tag tag-short">Short ₹${fmt(short)}</span>`:''}
+        ${excess>1?`<span class="tag tag-due">Excess ₹${fmt(excess)}</span>`:''}
+        ${short<=1&&excess<=1?`<span class="tag tag-ok">✓ Clear</span>`:''}
+        ${r.testing?`<span class="tag tag-info">Testing</span>`:''}
+      </div>
+      ${r.notes?`<div style="font-size:12px;color:var(--muted);margin-top:6px;">📝 ${r.notes}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <button class="btn btn-outline btn-sm" onclick="shareRecordWA(${r.id})">📤 WhatsApp</button>
+        <button class="btn btn-danger btn-sm" onclick="delRecord(${r.id})">✕ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function delRecord(id){if(confirm('Delete this record?')){deleteSettlement(id);renderRecords('today');}}
+function shareRecordWA(id){const r=getSettlements().find(s=>s.id===id);if(r)shareWA(r);}
+
+// ANALYSIS
+function switchAnalysisTab(tab,btn){
+  document.querySelectorAll('#page-analysis .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderAnalysis(tab);
+}
+function renderAnalysis(tab){
+  const all=getSettlements();
+  const today=new Date().toISOString().split('T')[0];
+  const weekAgo=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  const monthAgo=new Date(Date.now()-30*86400000).toISOString().split('T')[0];
+  const data=tab==='today'?all.filter(s=>s.date===today):tab==='week'?all.filter(s=>s.date>=weekAgo):all.filter(s=>s.date>=monthAgo);
+  const el=document.getElementById('analysis-content');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No data for this period</div></div>';return;}
+  const msVol=data.reduce((s,r)=>s+r.msVol,0);
+  const hsdVol=data.reduce((s,r)=>s+r.hsdVol,0);
+  const msAmt=data.reduce((s,r)=>s+r.msAmt,0);
+  const hsdAmt=data.reduce((s,r)=>s+r.hsdAmt,0);
+  const total=msAmt+hsdAmt;
+  const cash=data.reduce((s,r)=>s+(r.payCash||0),0);
+  const online=data.reduce((s,r)=>s+(r.payOnline||0),0);
+  const card=data.reduce((s,r)=>s+(r.payCard||0),0);
+  const dues=data.reduce((s,r)=>s+(r.payDue||0),0);
+  const shorts=data.reduce((s,r)=>s+(r.short>0?r.short:0),0);
+  const workers={};
+  data.forEach(r=>{
+    if(!workers[r.workerName])workers[r.workerName]={name:r.workerName,sale:0,shifts:0,short:0,dues:0};
+    workers[r.workerName].sale+=r.totalSale;
+    workers[r.workerName].shifts+=1;
+    workers[r.workerName].short+=r.short>0?r.short:0;
+    workers[r.workerName].dues+=r.payDue||0;
+  });
+  const wList=Object.values(workers).sort((a,b)=>b.sale-a.sale);
+  el.innerHTML=`
+    <div class="metric-grid">
+      <div class="metric-card ms"><div class="metric-tag ms">MS VOLUME</div><div class="metric-val">${msVol.toFixed(1)}<span class="metric-unit">L</span></div></div>
+      <div class="metric-card hsd"><div class="metric-tag hsd">HSD VOLUME</div><div class="metric-val">${hsdVol.toFixed(1)}<span class="metric-unit">L</span></div></div>
+    </div>
+    <div class="card">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;margin-bottom:4px;">₹${fmt(total)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Total sale · ${data.length} shifts</div>
+      <div class="stat-row"><span class="stat-label">💵 Cash</span><span class="stat-val">₹${fmt(cash)}</span></div>
+      <div class="stat-row"><span class="stat-label">📱 Online / UPI</span><span class="stat-val">₹${fmt(online)}</span></div>
+      <div class="stat-row"><span class="stat-label">💳 Card</span><span class="stat-val">₹${fmt(card)}</span></div>
+      <div class="stat-row"><span class="stat-label" style="color:var(--orange)">🧾 Due bills</span><span class="stat-val" style="color:var(--orange)">₹${fmt(dues)}</span></div>
+      ${shorts>0?`<div class="stat-row"><span class="stat-label" style="color:var(--red)">⚠️ Total short</span><span class="stat-val" style="color:var(--red)">₹${fmt(shorts)}</span></div>`:''}
+    </div>
+    ${wList.length?`<div class="card"><div class="card-title">Worker Performance</div>${wList.map(w=>`
+      <div class="stat-row">
+        <div><div style="font-size:14px;font-weight:500;">${w.name}</div>
+        <div style="font-size:12px;color:var(--muted);">${w.shifts} shifts${w.dues>0?' · Due ₹'+fmt(w.dues):''}${w.short>0?' · Short ₹'+fmt(w.short):''}</div></div>
+        <div class="stat-val">₹${fmt(w.sale)}</div>
+      </div>`).join('')}</div>`:''}
+    <button class="btn btn-wa" onclick="shareAnalysisWA('${tab}')">📤 Share on WhatsApp</button>`;
+}
+
+// WHATSAPP
+function shareWA(r){
+  const short=r.short>1?`\n⚠️ Short: ₹${fmt(r.short)}`:r.short<-1?`\n➕ Excess: ₹${fmt(Math.abs(r.short))}`:'\n✅ Amount matched';
+  const msg=encodeURIComponent(`⛽ *Settlement — ${r.workerName}*
+📅 ${r.date} · ${r.shift==='day'?'☀️ Day':'🌙 Night'} · ${r.du}
+${r.testing?'🔬 Testing done (−5L each)\n':''}
+📊 *Sale*
+  MS: ${r.msVol.toFixed(2)}L → ₹${fmt(r.msAmt)}
+  HSD: ${r.hsdVol.toFixed(2)}L → ₹${fmt(r.hsdAmt)}
+  *Total: ₹${fmt(r.totalSale)}*
+
+💰 *Collection*
+  Cash: ₹${fmt(r.payCash||0)}
+  Online: ₹${fmt(r.payOnline||0)}
+  Card: ₹${fmt(r.payCard||0)}
+  Due Bills: ₹${fmt(r.payDue||0)}${short}${r.notes?'\n📝 '+r.notes:''}`);
+  window.open('https://wa.me/?text='+msg,'_blank');
+}
+function shareAnalysisWA(tab){
+  const all=getSettlements();
+  const today=new Date().toISOString().split('T')[0];
+  const weekAgo=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  const monthAgo=new Date(Date.now()-30*86400000).toISOString().split('T')[0];
+  const data=tab==='today'?all.filter(s=>s.date===today):tab==='week'?all.filter(s=>s.date>=weekAgo):all.filter(s=>s.date>=monthAgo);
+  const total=data.reduce((s,r)=>s+r.totalSale,0);
+  const label=tab==='today'?'Today':tab==='week'?'This Week':'This Month';
+  const msg=encodeURIComponent(`📊 *Fuel Station — ${label}*
+📅 ${today}
+⛽ MS: ${data.reduce((s,r)=>s+r.msVol,0).toFixed(2)}L
+🛢 HSD: ${data.reduce((s,r)=>s+r.hsdVol,0).toFixed(2)}L
+💰 Total Sale: ₹${fmt(total)}
+🔄 Shifts: ${data.length}
+📱 Online: ₹${fmt(data.reduce((s,r)=>s+(r.payOnline||0),0))}
+💳 Card: ₹${fmt(data.reduce((s,r)=>s+(r.payCard||0),0))}
+🧾 Dues: ₹${fmt(data.reduce((s,r)=>s+(r.payDue||0),0))}
+⚠️ Total Short: ₹${fmt(data.reduce((s,r)=>s+(r.short>0?r.short:0),0))}`);
+  window.open('https://wa.me/?text='+msg,'_blank');
+}
+
+// OCR SCANNER
+function openScanner(slot){
+  currentSlot=slot;
+  document.getElementById('overlay-title').textContent=slot==='initial'?'Scanning Initial Slip':'Scanning Final Slip';
+  document.getElementById('overlay-sub').textContent='Upload photo of the slip';
+  document.getElementById('ocr-status').innerHTML='';
   document.getElementById('scanner-overlay').classList.remove('hidden');
   startCamera();
 }
-
-async function startCamera() {
-  try {
-    const video = document.getElementById('cam-video');
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    video.srcObject = cameraStream;
-    video.style.display = 'block';
-    // Auto-capture after 2.5s
-    setTimeout(captureAndSend, 2500);
-  } catch(e) {
-    document.getElementById('overlay-sub').textContent = 'Camera unavailable — upload a photo below';
-  }
+async function startCamera(){
+  try{
+    const v=document.getElementById('cam-video');
+    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    v.srcObject=cameraStream;v.style.display='block';
+    setTimeout(captureAndSend,2500);
+  }catch(e){document.getElementById('overlay-sub').textContent='Camera unavailable — upload a photo';}
 }
-
-async function captureAndSend() {
-  const video = document.getElementById('cam-video');
-  if (!video.srcObject) return;
-  const canvas = document.createElement('canvas');
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 480;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  canvas.toBlob(blob => { if(blob) sendToOCR(blob); }, 'image/jpeg', 0.92);
+async function captureAndSend(){
+  const v=document.getElementById('cam-video');
+  if(!v.srcObject)return;
+  const c=document.createElement('canvas');c.width=v.videoWidth||640;c.height=v.videoHeight||480;
+  c.getContext('2d').drawImage(v,0,0);
+  c.toBlob(b=>{if(b)sendToOCR(b);},'image/jpeg',0.92);
 }
-
-function triggerUpload() {
-  document.getElementById('file-input').click();
+function triggerUpload(){document.getElementById('file-input').click();}
+document.getElementById('file-input').addEventListener('change',e=>{if(e.target.files[0])sendToOCR(e.target.files[0]);e.target.value='';});
+async function sendToOCR(blob){
+  setOCRStatus('info','<span class="spinner"></span> Reading slip with OCR…');
+  try{
+    const base64=await blobToBase64(blob);
+    const res=await fetch(BACKEND_URL+'/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageBase64:base64,mimeType:blob.type||'image/jpeg'})});
+    const parsed=await res.json();
+    if(!res.ok)throw new Error(parsed.error||'Backend error');
+    let filled=0;
+    if(parsed.ms!=null){document.getElementById('ms-'+currentSlot).value=parseFloat(parsed.ms).toFixed(2);filled++;}
+    if(parsed.hsd!=null){document.getElementById('hsd-'+currentSlot).value=parseFloat(parsed.hsd).toFixed(2);filled++;}
+    if(filled===2){setOCRStatus('ok','✓ MS: '+parsed.ms+'L · HSD: '+parsed.hsd+'L');setTimeout(closeScanner,1400);}
+    else if(filled===1){setOCRStatus('ok','One value found — enter other manually');setTimeout(closeScanner,2000);}
+    else{setOCRStatus('err','Not detected — enter manually');}
+  }catch(err){setOCRStatus('err','Error: '+err.message);}
 }
-
-document.getElementById('file-input').addEventListener('change', e => {
-  if (e.target.files[0]) sendToOCR(e.target.files[0]);
-  e.target.value = '';
-});
-
-async function sendToOCR(imageBlob) {
-  if (BACKEND_URL === "YOUR_RENDER_URL_HERE") {
-    setOCRStatus('error', '⚠️ Backend URL not set — edit the HTML file and replace YOUR_RENDER_URL_HERE');
-    return;
-  }
-  setOCRStatus('loading', 'Reading slip with OCR…');
-  try {
-    const base64 = await blobToBase64(imageBlob);
-    const mimeType = imageBlob.type || 'image/jpeg';
-
-    const response = await fetch(`${BACKEND_URL}/scan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: base64, mimeType })
-    });
-
-    const parsed = await response.json();
-    if (!response.ok) throw new Error(parsed.error || 'Backend error');
-
-    let filled = 0;
-    if (parsed.ms !== null && parsed.ms !== undefined) {
-      document.getElementById(`ms-${currentSlot}`).value = parseFloat(parsed.ms).toFixed(2);
-      document.getElementById(`ms-${currentSlot}`).classList.add('filled');
-      filled++;
-    }
-    if (parsed.hsd !== null && parsed.hsd !== undefined) {
-      document.getElementById(`hsd-${currentSlot}`).value = parseFloat(parsed.hsd).toFixed(2);
-      document.getElementById(`hsd-${currentSlot}`).classList.add('filled');
-      filled++;
-    }
-
-    if (filled === 2) {
-      setOCRStatus('ok', `✓ Found MS: ${parsed.ms} L &nbsp;|&nbsp; HSD: ${parsed.hsd} L`);
-      showSlipStatus(currentSlot, 'ok', 'OCR read both values');
-      setTimeout(closeScanner, 1400);
-    } else if (filled === 1) {
-      const found = parsed.ms ? `MS: ${parsed.ms}` : `HSD: ${parsed.hsd}`;
-      setOCRStatus('ok', `Partial: ${found} — enter missing value manually`);
-      setTimeout(closeScanner, 2200);
-    } else {
-      setOCRStatus('error', 'No CumVolume values found — enter manually');
-    }
-
-  } catch(err) {
-    setOCRStatus('error', `Error: ${err.message}`);
-  }
-}
-
-function setOCRStatus(type, msg) {
-  const el = document.getElementById('ocr-status');
-  const cls = type === 'ok' ? 'status-ok' : type === 'loading' ? 'status-loading' : 'status-err';
-  const icon = type === 'loading' ? '<span class="spinner"></span>' : '';
-  el.innerHTML = `<span class="status-pill ${cls}" style="margin-top:10px">${icon} ${msg}</span>`;
-}
-
-function showSlipStatus(slot, type, msg) {
-  const el = document.getElementById(`status-${slot}`);
-  const cls = type === 'ok' ? 'status-ok' : 'status-err';
-  el.innerHTML = `<span class="status-pill ${cls}" style="margin-top:8px">✓ ${msg}</span>`;
-}
-
-function closeScanner() {
+function setOCRStatus(t,msg){const cls=t==='ok'?'pill-ok':t==='info'?'pill-info':'pill-err';document.getElementById('ocr-status').innerHTML=`<span class="pill ${cls}">${msg}</span>`;}
+function closeScanner(){
   document.getElementById('scanner-overlay').classList.add('hidden');
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-  document.getElementById('cam-video').style.display = 'none';
-  document.getElementById('cam-video').srcObject = null;
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}
+  document.getElementById('cam-video').style.display='none';
+  document.getElementById('cam-video').srcObject=null;
 }
-
-function blobToBase64(blob) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(',')[1]);
-    r.onerror = () => rej(new Error('File read failed'));
-    r.readAsDataURL(blob);
-  });
-}
-
-// ── Step flow ─────────────────────────────────
-
-function promptTesting() {
-  const ids = ['ms-initial','ms-final','hsd-initial','hsd-final'];
-  for (const id of ids) {
-    if (!document.getElementById(id).value) {
-      alert(`Please fill in all four values.\n\nMissing: ${id.replace('-',' ').toUpperCase()}`);
-      return;
-    }
-  }
-  const el = document.getElementById('step-testing');
-  el.classList.remove('hidden');
-  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function setTesting(done) {
-  testingDone = done;
-  const msI = parseFloat(document.getElementById('ms-initial').value) || 0;
-  const msF = parseFloat(document.getElementById('ms-final').value) || 0;
-  const hsdI = parseFloat(document.getElementById('hsd-initial').value) || 0;
-  const hsdF = parseFloat(document.getElementById('hsd-final').value) || 0;
-  const deduct = done ? 5 : 0;
-  salesData.ms = Math.max(0, (msF - msI) - deduct);
-  salesData.hsd = Math.max(0, (hsdF - hsdI) - deduct);
-  renderSales(done);
-}
-
-function renderSales(withTesting) {
-  const note = withTesting ? ' · testing deducted (−5 L each)' : '';
-  document.getElementById('sales-label').textContent = `Today's sale${note}`;
-  document.getElementById('sales-display').innerHTML = `
-    <div class="metric-block ms">
-      <div class="metric-tag ms">MS · PETROL</div>
-      <div class="metric-val">${salesData.ms.toFixed(2)}<span class="metric-unit">L</span></div>
-    </div>
-    <div class="metric-block hsd">
-      <div class="metric-tag hsd">HSD · DIESEL</div>
-      <div class="metric-val">${salesData.hsd.toFixed(2)}<span class="metric-unit">L</span></div>
-    </div>
-  `;
-  document.getElementById('amount-block').classList.add('hidden');
-  const el = document.getElementById('step-sales');
-  el.classList.remove('hidden');
-  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function calculateAmount() {
-  const msRate = parseFloat(document.getElementById('ms-rate').value) || 0;
-  const hsdRate = parseFloat(document.getElementById('hsd-rate').value) || 0;
-  const msAmt = salesData.ms * msRate;
-  const hsdAmt = salesData.hsd * hsdRate;
-  const total = msAmt + hsdAmt;
-  const fmt = n => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  document.getElementById('total-amount').textContent = '₹' + fmt(total);
-  document.getElementById('breakdown-text').innerHTML =
-    `MS ₹${fmt(msAmt)} &nbsp;+&nbsp; HSD ₹${fmt(hsdAmt)}`;
-  const el = document.getElementById('amount-block');
-  el.classList.remove('hidden');
-  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function shareWhatsApp() {
-  const msRate = parseFloat(document.getElementById('ms-rate').value) || 0;
-  const hsdRate = parseFloat(document.getElementById('hsd-rate').value) || 0;
-  const fmt = n => n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const msAmt = salesData.ms * msRate;
-  const hsdAmt = salesData.hsd * hsdRate;
-  const total = msAmt + hsdAmt;
-  const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-  const testLine = testingDone ? '\n✅ Testing done today (−5 L deducted per product)' : '';
-  const msg = encodeURIComponent(
-`📊 *Daily Fuel Sales Report*
-📅 ${today}${testLine}
-
-⛽ *MS (Petrol)*
-   Volume : ${salesData.ms.toFixed(2)} L
-   Rate    : ₹${msRate.toFixed(2)}/L
-   Amount : ₹${fmt(msAmt)}
-
-🛢 *HSD (Diesel)*
-   Volume : ${salesData.hsd.toFixed(2)} L
-   Rate    : ₹${hsdRate.toFixed(2)}/L
-   Amount : ₹${fmt(hsdAmt)}
-
-━━━━━━━━━━━━━━━
-💰 *Total Sale: ₹${fmt(total)}*`
-  );
-  window.open(`https://wa.me/?text=${msg}`, '_blank');
-}
+function blobToBase64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=()=>rej(new Error('Read failed'));r.readAsDataURL(blob);});}
+function fmt(n){return(n||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0});}
 </script>
 </body>
 </html>
