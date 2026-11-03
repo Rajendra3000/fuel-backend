@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Fuel Station Manager</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#0f1117;--surface:#181c27;--surface2:#1e2333;--surface3:#242840;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eaf0;--muted:#7c8299;--dim:#4a5068;
+  --ms:#4f9cf9;--ms-bg:rgba(79,156,249,0.1);--ms-b:rgba(79,156,249,0.25);
+  --hsd:#4ade80;--hsd-bg:rgba(74,222,128,0.1);--hsd-b:rgba(74,222,128,0.25);
+  --yellow:#facc15;--red:#f87171;--orange:#fb923c;
+  --radius:10px;--radius-sm:7px;--radius-lg:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding-bottom:80px;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 8px;gap:3px;border:none;background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:10px;cursor:pointer;transition:color 0.15s;}
+.nav-btn.active{color:var(--ms);}
+.nav-btn svg{width:20px;height:20px;}
+.page{display:none;padding:16px;max-width:600px;margin:0 auto;}
+.page.active{display:block;}
+.page-title{font-size:18px;font-weight:700;color:var(--text);}
+.page-sub{font-size:13px;color:var(--muted);margin-top:3px;margin-bottom:20px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;}
+.card-title{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
+.form-group{margin-bottom:12px;}
+.form-label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;display:block;}
+.form-input{width:100%;height:40px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:0 12px;-moz-appearance:textfield;}
+.form-input::-webkit-outer-spin-button,.form-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.form-input:focus{outline:none;border-color:var(--ms);}
+select.form-input{cursor:pointer;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn{height:42px;border:none;border-radius:var(--radius);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity 0.15s,transform 0.1s;width:100%;}
+.btn:active{transform:scale(0.98);}
+.btn-primary{background:var(--ms);color:#fff;}
+.btn-success{background:#22c55e;color:#fff;}
+.btn-danger{background:#ef4444;color:#fff;}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text);}
+.btn-wa{background:#25D366;color:#fff;}
+.btn-sm{height:32px;font-size:12px;width:auto;padding:0 12px;}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.metric-card{border-radius:var(--radius);padding:14px;}
+.metric-card.ms{background:var(--ms-bg);border:1px solid var(--ms-b);}
+.metric-card.hsd{background:var(--hsd-bg);border:1px solid var(--hsd-b);}
+.metric-card.neutral{background:var(--surface2);border:1px solid var(--border);}
+.metric-tag{font-size:11px;font-weight:700;letter-spacing:0.06em;margin-bottom:5px;}
+.metric-tag.ms{color:var(--ms);}
+.metric-tag.hsd{color:var(--hsd);}
+.metric-tag.neutral{color:var(--muted);}
+.metric-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:500;color:var(--text);}
+.metric-unit{font-size:12px;color:var(--muted);margin-left:2px;}
+.slip-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
+.slip-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.slip-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:8px;}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:0.05em;}
+.badge-initial{background:rgba(250,204,21,0.12);color:var(--yellow);border:1px solid rgba(250,204,21,0.2);}
+.badge-final{background:rgba(74,222,128,0.12);color:var(--hsd);border:1px solid rgba(74,222,128,0.2);}
+.scan-btn{display:flex;align-items:center;gap:5px;height:32px;padding:0 12px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.vol-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vol-label{font-size:11px;font-weight:700;letter-spacing:0.04em;margin-bottom:5px;display:block;}
+.vol-label.ms{color:var(--ms);}
+.vol-label.hsd{color:var(--hsd);}
+.pay-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pay-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.pay-label{font-size:13px;color:var(--muted);flex:1;}
+.pay-input{width:130px;height:36px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:14px;padding:0 10px;text-align:right;-moz-appearance:textfield;}
+.pay-input::-webkit-outer-spin-button,.pay-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.pay-input:focus{outline:none;border-color:var(--ms);}
+.result-box{border-radius:var(--radius);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
+.result-ok{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);}
+.result-short{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);}
+.result-excess{background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.25);}
+.result-label{font-size:12px;color:var(--muted);}
+.result-amount{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:600;}
+.result-ok .result-amount{color:#22c55e;}
+.result-short .result-amount{color:var(--red);}
+.result-excess .result-amount{color:var(--orange);}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:20px;margin-top:8px;}
+.pill-ok{background:rgba(74,222,128,0.1);color:var(--hsd);border:1px solid rgba(74,222,128,0.2);}
+.pill-err{background:rgba(248,113,113,0.1);color:var(--red);border:1px solid rgba(248,113,113,0.2);}
+.pill-info{background:rgba(79,156,249,0.1);color:var(--ms);border:1px solid rgba(79,156,249,0.2);}
+.spinner{width:14px;height:14px;border:2px solid rgba(79,156,249,0.3);border-top-color:var(--ms);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:340px;text-align:center;}
+.overlay-title{font-size:15px;font-weight:600;margin-bottom:4px;}
+.overlay-sub{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.cam-frame{width:100%;height:170px;background:#000;border-radius:var(--radius);border:1px solid var(--border);position:relative;overflow:hidden;margin-bottom:12px;}
+.cam-frame video{width:100%;height:100%;object-fit:cover;display:none;}
+.scan-line{position:absolute;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--ms),transparent);animation:scanMove 1.8s ease-in-out infinite;top:20%;}
+@keyframes scanMove{0%,100%{top:15%}50%{top:80%}}
+.cam-corner{position:absolute;width:16px;height:16px;border-color:var(--ms);border-style:solid;border-width:0;}
+.cam-corner.tl{top:7px;left:7px;border-top-width:2px;border-left-width:2px;border-radius:3px 0 0 0;}
+.cam-corner.tr{top:7px;right:7px;border-top-width:2px;border-right-width:2px;border-radius:0 3px 0 0;}
+.cam-corner.bl{bottom:7px;left:7px;border-bottom-width:2px;border-left-width:2px;border-radius:0 0 0 3px;}
+.cam-corner.br{bottom:7px;right:7px;border-bottom-width:2px;border-right-width:2px;border-radius:0 0 3px 0;}
+.overlay-btns{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+.btn-upload{display:flex;align-items:center;gap:5px;height:34px;padding:0 14px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:transparent;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
+.btn-cancel-sm{height:34px;padding:0 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;}
+.record-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;}
+.record-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.record-name{font-size:14px;font-weight:600;}
+.record-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.record-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.tag{font-size:11px;padding:2px 8px;border-radius:20px;}
+.tag-short{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.2);}
+.tag-ok{background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.2);}
+.tag-due{background:rgba(251,146,60,0.12);color:var(--orange);border:1px solid rgba(251,146,60,0.2);}
+.tag-info{background:rgba(79,156,249,0.12);color:var(--ms);border:1px solid rgba(79,156,249,0.2);}
+.emp-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.emp-avatar{width:40px;height:40px;border-radius:50%;background:var(--ms-bg);border:1px solid var(--ms-b);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--ms);flex-shrink:0;}
+.emp-name{font-size:14px;font-weight:600;}
+.emp-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--surface2);border-radius:var(--radius);padding:4px;}
+.tab{flex:1;height:34px;border:none;border-radius:var(--radius-sm);background:transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{font-size:13px;color:var(--muted);}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.hidden{display:none!important;}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<!-- PAGE: SETTLEMENT -->
+<div class="page active" id="page-settle">
+  <div class="page-title">⛽ Settlement</div>
+  <div class="page-sub" id="settle-date-label"></div>
+
+  <div class="card">
+    <div class="card-title">Worker & Shift</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Worker</label>
+        <select class="form-input" id="sel-worker"><option value="">Select worker</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Shift</label>
+        <select class="form-input" id="sel-shift">
+          <option value="day">☀️ Day</option>
+          <option value="night">🌙 Night</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Dispensing Unit</label>
+        <select class="form-input" id="sel-du">
+          <option value="DU1">DU 1</option>
+          <option value="DU2">DU 2</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" class="form-input" id="settle-date-input">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">CumVolume — Scan or Enter</div>
+    <div class="slip-block">
+      <div class="slip-header">
+        <div class="slip-name">📄 Slip 1 <span class="badge badge-initial">INITIAL</span></div>
+        <button class="scan-btn" onclick="openScanner('initial')">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3"/></svg>
+          Scan
+        </button>
+      </div>
+      <div class="vol-grid">
+        <div><span class="vol-label ms">MS CumVol (L)</span><input type="number" class="form-input" id="ms-initial" placeholder="0.00" step="0.01"></div>
+        <div><span class="vol-label hsd">HSD CumVol (L)</span><input type="number" class="form-input" id="hsd-initial" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div id="status-initial"></div>
+    </div>
+    <div class="slip-block">
+      <div class="slip-header">
+        <div class="slip-name">📄 Slip 2 <span class="badge badge-final">FINAL</span></div>
+        <button class="scan-btn" onclick="openScanner('final')">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h2v2h-2zM18 14h3M14 18h2M18 18h3"/></svg>
+          Scan
+        </button>
+      </div>
+      <div class="vol-grid">
+        <div><span class="vol-label ms">MS CumVol (L)</span><input type="number" class="form-input" id="ms-final" placeholder="0.00" step="0.01"></div>
+        <div><span class="vol-label hsd">HSD CumVol (L)</span><input type="number" class="form-input" id="hsd-final" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div id="status-final"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" style="color:var(--ms)">MS Rate (₹/L)</label>
+        <input type="number" class="form-input" id="ms-rate" value="115.54" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="color:var(--hsd)">HSD Rate (₹/L)</label>
+        <input type="number" class="form-input" id="hsd-rate" value="100.56" step="0.01">
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <input type="checkbox" id="testing-check" style="width:16px;height:16px;cursor:pointer;">
+      <label for="testing-check" style="font-size:13px;color:var(--muted);cursor:pointer;">Testing done today (−5L each product)</label>
+    </div>
+    <button class="btn btn-primary" onclick="calculateSale()">🧮 Calculate Sale</button>
+  </div>
+
+  <!-- Sale Result -->
+  <div class="card hidden" id="sale-result-card">
+    <div class="card-title">Sale Result</div>
+    <div class="metric-grid">
+      <div class="metric-card ms"><div class="metric-tag ms">MS SOLD</div><div class="metric-val" id="res-ms-vol">—</div></div>
+      <div class="metric-card hsd"><div class="metric-tag hsd">HSD SOLD</div><div class="metric-val" id="res-hsd-vol">—</div></div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card neutral"><div class="metric-tag neutral">MS AMOUNT</div><div class="metric-val" id="res-ms-amt">—</div></div>
+      <div class="metric-card neutral"><div class="metric-tag neutral">HSD AMOUNT</div><div class="metric-val" id="res-hsd-amt">—</div></div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:13px;color:var(--muted);">Total Sale</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:600;" id="res-total">₹0</div>
+    </div>
+  </div>
+
+  <!-- Payment Collection -->
+  <div class="card hidden" id="payment-card">
+    <div class="card-title">Payment Collection by Worker</div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(74,222,128,0.1);">💵</div>
+      <div class="pay-label">Cash</div>
+      <input type="number" class="pay-input" id="pay-cash" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(79,156,249,0.1);">📱</div>
+      <div class="pay-label">Online / UPI</div>
+      <input type="number" class="pay-input" id="pay-online" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(250,204,21,0.1);">💳</div>
+      <div class="pay-label">Card Machine</div>
+      <input type="number" class="pay-input" id="pay-card" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div class="pay-row">
+      <div class="pay-icon" style="background:rgba(251,146,60,0.1);">🧾</div>
+      <div class="pay-label">Due Bills</div>
+      <input type="number" class="pay-input" id="pay-due" placeholder="0" oninput="matchTotal()">
+    </div>
+    <div id="match-result"></div>
+    <div class="divider"></div>
+    <div class="form-group">
+      <label class="form-label">Notes (optional)</label>
+      <input type="text" class="form-input" id="settle-notes" placeholder="Any remarks...">
+    </div>
+    <button class="btn btn-success" onclick="saveSettlement(true)">✓ Save & Share Settlement</button>
+  </div>
+</div>
+
+<!-- PAGE: RECORDS -->
+<div class="page" id="page-records">
+  <div class="page-title">📋 Records</div>
+  <div class="page-sub">All worker settlements</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchRecordTab('today',this)">Today</button>
+    <button class="tab" onclick="switchRecordTab('week',this)">This Week</button>
+    <button class="tab" onclick="switchRecordTab('all',this)">All</button>
+  </div>
+  <div id="records-list"></div>
+</div>
+
+<!-- PAGE: EMPLOYEES -->
+<div class="page" id="page-employees">
+  <div class="page-title">👥 Workers</div>
+  <div class="page-sub">Manage employees, track dues & shorts</div>
+  <div class="card">
+    <div class="card-title">Add Employee</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-input" id="emp-name" placeholder="Worker name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone</label>
+        <input type="text" class="form-input" id="emp-phone" inputmode="tel" placeholder="10-digit mobile (required)">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addEmployee()">+ Add Worker</button>
+  </div>
+  <div id="emp-list"></div>
+</div>
+
+<!-- PAGE: ANALYSIS -->
+<div class="page" id="page-analysis">
+  <div class="page-title">📊 Analysis</div>
+  <div class="page-sub">Sales & performance overview</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchAnalysisTab('today',this)">Today</button>
+    <button class="tab" onclick="switchAnalysisTab('week',this)">Week</button>
+    <button class="tab" onclick="switchAnalysisTab('month',this)">Month</button>
+  </div>
+  <div id="analysis-content"></div>
+</div>
+
+<!-- SCANNER OVERLAY -->
+<div class="overlay hidden" id="scanner-overlay">
+  <div class="overlay-box">
+    <div class="overlay-title" id="overlay-title">Scanning Slip</div>
+    <div class="overlay-sub" id="overlay-sub">Upload photo of the slip</div>
+    <div class="cam-frame">
+      <div class="cam-corner tl"></div><div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div><div class="cam-corner br"></div>
+      <div class="scan-line"></div>
+      <video id="cam-video" autoplay playsinline muted></video>
+    </div>
+    <div id="ocr-status"></div>
+    <div class="overlay-btns">
+      <button class="btn-primary" id="btn-capture" onclick="captureAndSend()" style="height:34px;padding:0 16px;width:auto;font-size:13px;display:none;">📸 Capture</button>
+      <button class="btn-upload" onclick="triggerUpload()">📷 Upload photo</button>
+      <button class="btn-cancel-sm" onclick="closeScanner()">Cancel</button>
+    </div>
+    <input type="file" id="file-input" accept="image/*" style="display:none">
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showPage('settle',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 14l2 2 4-4M3 12a9 9 0 1018 0 9 9 0 00-18 0z"/></svg>
+    Settle
+  </button>
+  <button class="nav-btn" onclick="showPage('records',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    Records
+  </button>
+  <button class="nav-btn" onclick="showPage('employees',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 7a4 4 0 100 8 4 4 0 000-8z"/></svg>
+    Workers
+  </button>
+  <button class="nav-btn" onclick="showPage('analysis',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    Analysis
+  </button>
+</nav>
+
+<script>
+const BACKEND_URL = "https://fuel-backend-5qwb.onrender.com";
+let saleData = {ms:0,hsd:0,msAmt:0,hsdAmt:0,total:0};
+let currentSlot = '';
+let cameraStream = null;
+
+// INIT
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('settle-date-label').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('settle-date-input').value = new Date().toISOString().split('T')[0];
+  loadWorkerDropdown();
+  renderEmployeeList();
+  renderRecords('today');
+  renderAnalysis('today');
+});
+
+// NAV
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='records') renderRecords('today');
+  if(name==='employees') renderEmployeeList();
+  if(name==='analysis') renderAnalysis('today');
+}
+
+// STORAGE
+
+var DB={emp:[],set:[],kh:[]},fdb=null;
+function fsSet(c,o){if(fdb)fdb.collection(c).doc(String(o.id)).set(JSON.parse(JSON.stringify(o))).catch(e=>alert('Save failed: '+e.message));}
+function fsDel(c,id){if(fdb)fdb.collection(c).doc(String(id)).delete().catch(e=>alert('Delete failed: '+e.message));}
+function getEmployees(){return DB.emp.slice();}
+function saveEmployee(e){const i=DB.emp.findIndex(x=>x.id===e.id);if(i>=0)DB.emp[i]=e;else DB.emp.push(e);fsSet('employees',e);}
+function deleteEmployee(id){DB.emp=DB.emp.filter(e=>e.id!==id);fsDel('employees',id);}
+function getSettlements(){return DB.set.slice();}
+function addSettlement(s){DB.set.unshift(s);fsSet('settlements',s);}
+function deleteSettlement(id){DB.set=DB.set.filter(s=>s.id!==id);fsDel('settlements',id);}
+function getKhataEntries(){return DB.kh.slice();}
+function addKhataEntryData(e){DB.kh.unshift(e);fsSet('khata',e);}
+function saveKhataEntries(l){const k=new Set(l.map(e=>e.id));DB.kh.filter(e=>!k.has(e.id)).forEach(e=>fsDel('khata',e.id));DB.kh=l.slice();}
+
+// EMPLOYEES
+function loadWorkerDropdown(){
+  const sel=document.getElementById('sel-worker');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Select worker</option>';
+  getEmployees().forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name;sel.appendChild(o);});
+  if(cur) sel.value=cur;
+}
+function addEmployee(){
+  const name=document.getElementById('emp-name').value.trim();
+  if(!name){alert('Enter a name');return;}
+  const ph=cleanPhone(document.getElementById('emp-phone').value);
+  if(!ph){alert('Enter a valid 10-digit phone number');return;}
+  saveEmployee({id:Date.now(),name,phone:ph});
+  document.getElementById('emp-name').value='';
+  document.getElementById('emp-phone').value='';
+  loadWorkerDropdown();renderEmployeeList();
+}
+function renderEmployeeList(){
+  const emps=getEmployees();
+  const settlements=getSettlements();
+  const el=document.getElementById('emp-list');
+  if(!emps.length){el.innerHTML='<div class="empty"><div class="empty-icon">👤</div><div class="empty-text">No workers added</div></div>';return;}
+  el.innerHTML=emps.map(e=>{
+    const es=settlements.filter(s=>String(s.workerId)===String(e.id));
+    const dues=es.reduce((s,r)=>s+(r.payDue||0),0);
+    const shorts=es.reduce((s,r)=>s+(r.short>0?r.short:0),0);
+    const init=e.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="emp-card" style="cursor:pointer;" onclick="openWorkerDetail(${e.id})">
+      <div class="emp-avatar">${init}</div>
+      <div style="flex:1">
+        <div class="emp-name">${e.name}</div>
+        <div class="emp-meta">${e.phone||'No phone'} · ${es.length} shifts</div>
+        <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;">
+          ${dues>0?`<span class="tag tag-due">Due ₹${fmt(dues)}</span>`:''}
+          ${shorts>0?`<span class="tag tag-short">Short ₹${fmt(shorts)}</span>`:''}
+          ${dues===0&&shorts===0?`<span class="tag tag-ok">✓ Clear</span>`:''}
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delEmp(${e.id})">✕</button>
+    </div>`;
+  }).join('');
+}
+function delEmp(id){if(confirm('Delete this worker?')){deleteEmployee(id);loadWorkerDropdown();renderEmployeeList();}}
+
+// CALCULATE SALE
+function calculateSale(){
+  const msI=parseFloat(document.getElementById('ms-initial').value)||0;
+  const msF=parseFloat(document.getElementById('ms-final').value)||0;
+  const hsdI=parseFloat(document.getElementById('hsd-initial').value)||0;
+  const hsdF=parseFloat(document.getElementById('hsd-final').value)||0;
+  const msRate=parseFloat(document.getElementById('ms-rate').value)||0;
+  const hsdRate=parseFloat(document.getElementById('hsd-rate').value)||0;
+  const testing=document.getElementById('testing-check').checked;
+  if(!msF&&!hsdF){alert('Enter CumVolume values first');return;}
+  const d=testing?5:0;
+  const msVol=Math.max(0,(msF-msI)-d);
+  const hsdVol=Math.max(0,(hsdF-hsdI)-d);
+  const msAmt=msVol*msRate;
+  const hsdAmt=hsdVol*hsdRate;
+  saleData={ms:msVol,hsd:hsdVol,msAmt,hsdAmt,total:msAmt+hsdAmt};
+  document.getElementById('res-ms-vol').innerHTML=msVol.toFixed(2)+'<span class="metric-unit">L</span>';
+  document.getElementById('res-hsd-vol').innerHTML=hsdVol.toFixed(2)+'<span class="metric-unit">L</span>';
+  document.getElementById('res-ms-amt').textContent='₹'+fmt(msAmt);
+  document.getElementById('res-hsd-amt').textContent='₹'+fmt(hsdAmt);
+  document.getElementById('res-total').textContent='₹'+fmt(saleData.total);
+  document.getElementById('sale-result-card').classList.remove('hidden');
+  document.getElementById('payment-card').classList.remove('hidden');
+  document.getElementById('sale-result-card').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// MATCH TOTAL
+function matchTotal(){
+  const cash=parseFloat(document.getElementById('pay-cash').value)||0;
+  const online=parseFloat(document.getElementById('pay-online').value)||0;
+  const card=parseFloat(document.getElementById('pay-card').value)||0;
+  const due=parseFloat(document.getElementById('pay-due').value)||0;
+  const collected=cash+online+card+due;
+  const diff=collected-saleData.total;
+  const el=document.getElementById('match-result');
+  if(!saleData.total){el.innerHTML='';return;}
+  if(Math.abs(diff)<1){
+    el.innerHTML=`<div class="result-box result-ok"><div class="result-label">Status</div><div class="result-amount">✓ Matched</div></div>`;
+  } else if(diff<0){
+    el.innerHTML=`<div class="result-box result-short"><div><div class="result-label">Short by</div><div style="font-size:11px;color:var(--muted)">Collected ₹${fmt(collected)} | Sale ₹${fmt(saleData.total)}</div></div><div class="result-amount">−₹${fmt(Math.abs(diff))}</div></div>`;
+  } else {
+    el.innerHTML=`<div class="result-box result-excess"><div><div class="result-label">Excess</div><div style="font-size:11px;color:var(--muted)">Collected ₹${fmt(collected)} | Sale ₹${fmt(saleData.total)}</div></div><div class="result-amount">+₹${fmt(diff)}</div></div>`;
+  }
+}
+
+// SAVE SETTLEMENT
+function saveSettlement(doShare){
+  const workerId=document.getElementById('sel-worker').value;
+  const workerName=document.getElementById('sel-worker').selectedOptions[0]?.text||'Unknown';
+  if(!workerId){alert('Select a worker');return;}
+  if(!saleData.total){alert('Calculate sale first');return;}
+  const cash=parseFloat(document.getElementById('pay-cash').value)||0;
+  const online=parseFloat(document.getElementById('pay-online').value)||0;
+  const card=parseFloat(document.getElementById('pay-card').value)||0;
+  const due=parseFloat(document.getElementById('pay-due').value)||0;
+  const collected=cash+online+card+due;
+  const record={
+    id:Date.now(),
+    date:document.getElementById('settle-date-input').value,
+    workerId,workerName,
+    shift:document.getElementById('sel-shift').value,
+    du:document.getElementById('sel-du').value,
+    msVol:saleData.ms,hsdVol:saleData.hsd,
+    msAmt:saleData.msAmt,hsdAmt:saleData.hsdAmt,
+    totalSale:saleData.total,
+    payCash:cash,payOnline:online,payCard:card,payDue:due,
+    collected,short:saleData.total-collected,
+    notes:document.getElementById('settle-notes').value,
+    testing:document.getElementById('testing-check').checked,
+    msFinalCumVol: parseFloat(document.getElementById('ms-final').value)||0,
+    hsdFinalCumVol: parseFloat(document.getElementById('hsd-final').value)||0
+  };
+  addSettlement(record);
+  if(doShare) shareWA(record);
+  resetForm();
+  alert('✓ Settlement saved for '+workerName+'!');
+}
+
+function resetForm(){
+  const lastDu = document.getElementById('sel-du').value;
+  ['ms-initial','hsd-initial','ms-final','hsd-final','pay-cash','pay-online','pay-card','pay-due','settle-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sel-worker').value='';
+  document.getElementById('testing-check').checked=false;
+  ['sale-result-card','payment-card'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['match-result','status-initial','status-final'].forEach(id=>document.getElementById(id).innerHTML='');
+  saleData={ms:0,hsd:0,msAmt:0,hsdAmt:0,total:0};
+  document.getElementById('sel-du').value = lastDu;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Auto-fill initial CumVol only once BOTH a worker and a DU are selected.
+// Re-runs whenever the worker or the DU changes, so switching DU pulls that DU's own last reading.
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('sel-du').addEventListener('change', autoFillInitialFromLastSettlement);
+  document.getElementById('sel-worker').addEventListener('change', autoFillInitialFromLastSettlement);
+});
+
+function autoFillInitialFromLastSettlement(){
+  const worker = document.getElementById('sel-worker').value;
+  const du = document.getElementById('sel-du').value;
+  const msInitial = document.getElementById('ms-initial');
+  const hsdInitial = document.getElementById('hsd-initial');
+  const status = document.getElementById('status-initial');
+
+  // Wait until both a worker and a DU are picked before touching the fields
+  if(!worker || !du){
+    return;
+  }
+
+  const all = getSettlements();
+  const last = all.find(s => s.du === du); // most recent settlement for this DU (list is newest-first)
+
+  if(last && (last.msFinalCumVol || last.hsdFinalCumVol)){
+    msInitial.value = (last.msFinalCumVol||0).toFixed(2);
+    hsdInitial.value = (last.hsdFinalCumVol||0).toFixed(2);
+    status.innerHTML = '<span class="pill pill-ok">✓ Auto-filled from last '+du+' settlement ('+last.date+')</span>';
+  } else {
+    msInitial.value = '';
+    hsdInitial.value = '';
+    status.innerHTML = '<span class="pill pill-info">No previous reading found for '+du+' — enter manually</span>';
+  }
+}
+
+// RECORDS
+function switchRecordTab(tab,btn){
+  document.querySelectorAll('#page-records .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderRecords(tab);
+}
+function renderRecords(tab){
+  const all=getSettlements();
+  const today=new Date().toISOString().split('T')[0];
+  const weekAgo=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  let data=tab==='today'?all.filter(s=>s.date===today):tab==='week'?all.filter(s=>s.date>=weekAgo):all;
+  const el=document.getElementById('records-list');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No records yet</div></div>';return;}
+  const totSale=data.reduce((s,r)=>s+r.totalSale,0);
+  const totShort=data.reduce((s,r)=>s+(r.short>0?r.short:0),0);
+  el.innerHTML=`<div class="card">
+    <div class="stat-row"><span class="stat-label">Total Sale</span><span class="stat-val">₹${fmt(totSale)}</span></div>
+    <div class="stat-row"><span class="stat-label">Settlements</span><span class="stat-val">${data.length}</span></div>
+    ${totShort>0?`<div class="stat-row"><span class="stat-label" style="color:var(--red)">Total Short</span><span class="stat-val" style="color:var(--red)">₹${fmt(totShort)}</span></div>`:''}
+  </div>`+data.map(r=>{
+    const short=r.short>0?r.short:0;
+    const excess=r.short<0?Math.abs(r.short):0;
+    const d=new Date(r.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    return `<div class="record-item">
+      <div class="record-header">
+        <div><div class="record-name">${r.workerName}</div><div class="record-meta">${d} · ${r.shift==='day'?'☀️ Day':'🌙 Night'} · ${r.du}</div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${short>1?'var(--red)':excess>1?'var(--orange)':'#22c55e'}">₹${fmt(r.totalSale)}</div>
+      </div>
+      <div class="record-tags">
+        <span class="tag tag-info">MS ${r.msVol.toFixed(1)}L</span>
+        <span class="tag tag-info">HSD ${r.hsdVol.toFixed(1)}L</span>
+        ${r.payDue>0?`<span class="tag tag-due">Due ₹${fmt(r.payDue)}</span>`:''}
+        ${short>1?`<span class="tag tag-short">Short ₹${fmt(short)}</span>`:''}
+        ${excess>1?`<span class="tag tag-due">Excess ₹${fmt(excess)}</span>`:''}
+        ${short<=1&&excess<=1?`<span class="tag tag-ok">✓ Clear</span>`:''}
+        ${r.testing?`<span class="tag tag-info">Testing</span>`:''}
+      </div>
+      ${r.notes?`<div style="font-size:12px;color:var(--muted);margin-top:6px;">📝 ${r.notes}</div>`:''}
+      <div style="display:flex;gap:6px;margin-top:10px;">
+        <button class="btn btn-outline btn-sm" onclick="shareRecordWA(${r.id})">📤 WhatsApp</button>
+        <button class="btn btn-danger btn-sm" onclick="delRecord(${r.id})">✕ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function delRecord(id){if(confirm('Delete this record?')){deleteSettlement(id);renderRecords('today');}}
+function shareRecordWA(id){const r=getSettlements().find(s=>s.id===id);if(r)shareWA(r);}
+
+// ANALYSIS
+function switchAnalysisTab(tab,btn){
+  document.querySelectorAll('#page-analysis .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderAnalysis(tab);
+}
+function renderAnalysis(tab){
+  const all=getSettlements();
+  const today=new Date().toISOString().split('T')[0];
+  const weekAgo=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  const monthAgo=new Date(Date.now()-30*86400000).toISOString().split('T')[0];
+  const data=tab==='today'?all.filter(s=>s.date===today):tab==='week'?all.filter(s=>s.date>=weekAgo):all.filter(s=>s.date>=monthAgo);
+  const el=document.getElementById('analysis-content');
+  if(!data.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">No data for this period</div></div>';return;}
+  const msVol=data.reduce((s,r)=>s+r.msVol,0);
+  const hsdVol=data.reduce((s,r)=>s+r.hsdVol,0);
+  const msAmt=data.reduce((s,r)=>s+r.msAmt,0);
+  const hsdAmt=data.reduce((s,r)=>s+r.hsdAmt,0);
+  const total=msAmt+hsdAmt;
+  const cash=data.reduce((s,r)=>s+(r.payCash||0),0);
+  const online=data.reduce((s,r)=>s+(r.payOnline||0),0);
+  const card=data.reduce((s,r)=>s+(r.payCard||0),0);
+  const dues=data.reduce((s,r)=>s+(r.payDue||0),0);
+  const shorts=data.reduce((s,r)=>s+(r.short>0?r.short:0),0);
+  const workers={};
+  data.forEach(r=>{
+    if(!workers[r.workerName])workers[r.workerName]={name:r.workerName,sale:0,shifts:0,short:0,dues:0};
+    workers[r.workerName].sale+=r.totalSale;
+    workers[r.workerName].shifts+=1;
+    workers[r.workerName].short+=r.short>0?r.short:0;
+    workers[r.workerName].dues+=r.payDue||0;
+  });
+  const wList=Object.values(workers).sort((a,b)=>b.sale-a.sale);
+  el.innerHTML=`
+    <div class="metric-grid">
+      <div class="metric-card ms"><div class="metric-tag ms">MS VOLUME</div><div class="metric-val">${msVol.toFixed(1)}<span class="metric-unit">L</span></div></div>
+      <div class="metric-card hsd"><div class="metric-tag hsd">HSD VOLUME</div><div class="metric-val">${hsdVol.toFixed(1)}<span class="metric-unit">L</span></div></div>
+    </div>
+    <div class="card">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;margin-bottom:4px;">₹${fmt(total)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Total sale · ${data.length} shifts</div>
+      <div class="stat-row"><span class="stat-label">💵 Cash</span><span class="stat-val">₹${fmt(cash)}</span></div>
+      <div class="stat-row"><span class="stat-label">📱 Online / UPI</span><span class="stat-val">₹${fmt(online)}</span></div>
+      <div class="stat-row"><span class="stat-label">💳 Card</span><span class="stat-val">₹${fmt(card)}</span></div>
+      <div class="stat-row"><span class="stat-label" style="color:var(--orange)">🧾 Due bills</span><span class="stat-val" style="color:var(--orange)">₹${fmt(dues)}</span></div>
+      ${shorts>0?`<div class="stat-row"><span class="stat-label" style="color:var(--red)">⚠️ Total short</span><span class="stat-val" style="color:var(--red)">₹${fmt(shorts)}</span></div>`:''}
+    </div>
+    ${wList.length?`<div class="card"><div class="card-title">Worker Performance</div>${wList.map(w=>`
+      <div class="stat-row">
+        <div><div style="font-size:14px;font-weight:500;">${w.name}</div>
+        <div style="font-size:12px;color:var(--muted);">${w.shifts} shifts${w.dues>0?' · Due ₹'+fmt(w.dues):''}${w.short>0?' · Short ₹'+fmt(w.short):''}</div></div>
+        <div class="stat-val">₹${fmt(w.sale)}</div>
+      </div>`).join('')}</div>`:''}
+    <button class="btn btn-wa" onclick="shareAnalysisWA('${tab}')">📤 Share on WhatsApp</button>`;
+}
+
+// WHATSAPP
+function shareWA(r){
+  const short=r.short>1?`\n⚠️ Short: ₹${fmt(r.short)}`:r.short<-1?`\n➕ Excess: ₹${fmt(Math.abs(r.short))}`:'\n✅ Amount matched';
+  const msg=encodeURIComponent(`⛽ *Settlement — ${r.workerName}*
+📅 ${r.date} · ${r.shift==='day'?'☀️ Day':'🌙 Night'} · ${r.du}
+${r.testing?'🔬 Testing done (−5L each)\n':''}
+📊 *Sale*
+  MS: ${r.msVol.toFixed(2)}L → ₹${fmt(r.msAmt)}
+  HSD: ${r.hsdVol.toFixed(2)}L → ₹${fmt(r.hsdAmt)}
+  *Total: ₹${fmt(r.totalSale)}*
+
+💰 *Collection*
+  Cash: ₹${fmt(r.payCash||0)}
+  Online: ₹${fmt(r.payOnline||0)}
+  Card: ₹${fmt(r.payCard||0)}
+  Due Bills: ₹${fmt(r.payDue||0)}${short}${r.notes?'\n📝 '+r.notes:''}`);
+  const w=getEmployees().find(e=>String(e.id)===String(r.workerId));
+  let ph=cleanPhone(w&&w.phone);
+  if(!ph&&w){const a=prompt('Add WhatsApp number for '+w.name+' (10 digits):');ph=cleanPhone(a);if(ph){w.phone=ph;saveEmployee(w);renderEmployeeList();}}
+  window.open('https://wa.me/'+(ph?'91'+ph:'')+'?text='+msg,'_blank');
+}
+function shareAnalysisWA(tab){
+  const all=getSettlements();
+  const today=new Date().toISOString().split('T')[0];
+  const weekAgo=new Date(Date.now()-7*86400000).toISOString().split('T')[0];
+  const monthAgo=new Date(Date.now()-30*86400000).toISOString().split('T')[0];
+  const data=tab==='today'?all.filter(s=>s.date===today):tab==='week'?all.filter(s=>s.date>=weekAgo):all.filter(s=>s.date>=monthAgo);
+  const total=data.reduce((s,r)=>s+r.totalSale,0);
+  const label=tab==='today'?'Today':tab==='week'?'This Week':'This Month';
+  const msg=encodeURIComponent(`📊 *Fuel Station — ${label}*
+📅 ${today}
+⛽ MS: ${data.reduce((s,r)=>s+r.msVol,0).toFixed(2)}L
+🛢 HSD: ${data.reduce((s,r)=>s+r.hsdVol,0).toFixed(2)}L
+💰 Total Sale: ₹${fmt(total)}
+🔄 Shifts: ${data.length}
+📱 Online: ₹${fmt(data.reduce((s,r)=>s+(r.payOnline||0),0))}
+💳 Card: ₹${fmt(data.reduce((s,r)=>s+(r.payCard||0),0))}
+🧾 Dues: ₹${fmt(data.reduce((s,r)=>s+(r.payDue||0),0))}
+⚠️ Total Short: ₹${fmt(data.reduce((s,r)=>s+(r.short>0?r.short:0),0))}`);
+  window.open('https://wa.me/?text='+msg,'_blank');
+}
+
+// OCR SCANNER
+function openScanner(slot){
+  currentSlot=slot;
+  document.getElementById('overlay-title').textContent=slot==='initial'?'Scanning Initial Slip':'Scanning Final Slip';
+  document.getElementById('overlay-sub').textContent='Upload photo of the slip';
+  document.getElementById('ocr-status').innerHTML='';
+  document.getElementById('btn-capture').style.display='none';
+  document.getElementById('scanner-overlay').classList.remove('hidden');
+  startCamera();
+}
+async function startCamera(){
+  try{
+    const v=document.getElementById('cam-video');
+    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+    v.srcObject=cameraStream;v.style.display='block';
+    // Wait for the stream to actually have a real frame before allowing capture —
+    // capturing too early can grab a blank/invalid frame.
+    v.onloadeddata=()=>{
+      document.getElementById('overlay-sub').textContent='Position the slip in frame, then tap Capture';
+      document.getElementById('btn-capture').style.display='flex';
+    };
+  }catch(e){document.getElementById('overlay-sub').textContent='Camera unavailable — upload a photo';}
+}
+async function captureAndSend(){
+  const v=document.getElementById('cam-video');
+  if(!v.srcObject || v.readyState < 2 || !v.videoWidth){
+    setOCRStatus('err','Camera still loading — wait a moment and try again');
+    return;
+  }
+  const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  c.toBlob(b=>{if(b)sendToOCR(b);else setOCRStatus('err','Capture failed — try again');},'image/jpeg',0.92);
+}
+function triggerUpload(){document.getElementById('file-input').click();}
+document.getElementById('file-input').addEventListener('change',e=>{if(e.target.files[0])sendToOCR(e.target.files[0]);e.target.value='';});
+async function sendToOCR(blob){
+  setOCRStatus('info','<span class="spinner"></span> Preparing image…');
+  try{
+    const compressed = await compressImageForOCR(blob);
+    setOCRStatus('info','<span class="spinner"></span> Reading slip with OCR…');
+    const base64=await blobToBase64(compressed);
+    const res=await fetch(BACKEND_URL+'/scan',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageBase64:base64,mimeType:compressed.type||'image/jpeg',du:document.getElementById('sel-du').value})});
+    const parsed=await res.json();
+    if(!res.ok)throw new Error(parsed.error||'Backend error');
+    let filled=0;
+    if(parsed.ms!=null){document.getElementById('ms-'+currentSlot).value=parseFloat(parsed.ms).toFixed(2);filled++;}
+    if(parsed.hsd!=null){document.getElementById('hsd-'+currentSlot).value=parseFloat(parsed.hsd).toFixed(2);filled++;}
+    if(filled===2){setOCRStatus('ok','✓ MS: '+parsed.ms+'L · HSD: '+parsed.hsd+'L');setTimeout(closeScanner,1400);}
+    else if(filled===1){setOCRStatus('ok','One value found — enter other manually');setTimeout(closeScanner,2000);}
+    else{setOCRStatus('err','Not detected — enter manually');}
+  }catch(err){setOCRStatus('err','Error: '+err.message);}
+}
+// Resizes/re-encodes an image blob so it comfortably fits under OCR.space's
+// free-tier 1MB image limit (and the backend's request body limit), even when
+// the source photo comes straight from a phone camera at several MB.
+function resizeImage(blob, maxDimension, quality){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) { height = Math.round(height * maxDimension / width); width = maxDimension; }
+        else { width = Math.round(width * maxDimension / height); height = maxDimension; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(out => {
+        URL.revokeObjectURL(url);
+        if (out) resolve(out); else reject(new Error('Image compression failed'));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not load image for compression')); };
+    img.src = url;
+  });
+}
+async function compressImageForOCR(blob){
+  const TARGET_BYTES = 700 * 1024; // stay well under OCR.space's 1MB free-tier cap
+  let dimension = 1600, quality = 0.85, out = blob;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    out = await resizeImage(blob, dimension, quality);
+    if (out.size <= TARGET_BYTES) return out;
+    if (quality > 0.5) quality -= 0.15;
+    else dimension = Math.round(dimension * 0.8);
+  }
+  return out; // best effort after 6 passes — still send whatever we ended up with
+}
+function setOCRStatus(t,msg){const cls=t==='ok'?'pill-ok':t==='info'?'pill-info':'pill-err';document.getElementById('ocr-status').innerHTML=`<span class="pill ${cls}">${msg}</span>`;}
+function closeScanner(){
+  document.getElementById('scanner-overlay').classList.add('hidden');
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}
+  document.getElementById('cam-video').style.display='none';
+  document.getElementById('cam-video').srcObject=null;
+  document.getElementById('btn-capture').style.display='none';
+}
+function blobToBase64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=()=>rej(new Error('Read failed'));r.readAsDataURL(blob);});}
+function fmt(n){return(n||0).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0});}
+</script>
+<script>
+// ── PHONE + MONTH/YEAR FILTER HELPERS ─────────
+function cleanPhone(v){v=String(v||'').replace(/\D/g,'');if(v.length===12&&v.startsWith('91'))v=v.slice(2);return /^[6-9]\d{9}$/.test(v)?v:'';}
+function knownKhataPhone(n){const e=getKhataEntries().find(x=>x.customerName===n&&cleanPhone(x.phone));return e?cleanPhone(e.phone):'';}
+function requireKhataPhone(n,typed){
+  let p=cleanPhone(typed)||knownKhataPhone(n);
+  if(p)return p;
+  const a=prompt('Phone number is required for '+n+'.\nEnter 10-digit mobile number:');
+  if(a===null)return '';
+  p=cleanPhone(a);
+  if(!p)alert('Enter a valid 10-digit mobile number');
+  return p;
+}
+function fillKhataPhone(){const p=knownKhataPhone(document.getElementById('khata-cust-name').value.trim());if(p)document.getElementById('khata-cust-phone').value=p;}
+const _n=new Date(),KF={work:{m:String(_n.getMonth()+1),y:String(_n.getFullYear())},hist:{m:String(_n.getMonth()+1),y:String(_n.getFullYear())},cust:{m:'',y:''},name:'',wid:''};
+function inFilter(d,st){d=String(d||'');return(!st.y||d.slice(0,4)===st.y)&&(!st.m||+d.slice(5,7)===+st.m);}
+function mkFilterBar(dates,st,cb){
+  const ys=[...new Set(dates.map(d=>String(d||'').slice(0,4)).filter(Boolean).concat(String(_n.getFullYear())))].sort().reverse();
+  const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+    <select class="form-input" onchange="${cb}('m',this.value)"><option value="">All months</option>${mn.map((m,i)=>`<option value="${i+1}"${+st.m===i+1?' selected':''}>${m}</option>`).join('')}</select>
+    <select class="form-input" onchange="${cb}('y',this.value)"><option value="">All years</option>${ys.map(y=>`<option${st.y===y?' selected':''}>${y}</option>`).join('')}</select>
+  </div>`;
+}
+function histF(k,v){KF.hist[k]=v;renderKhataHistory();}
+function custF(k,v){KF.cust[k]=v;const n=KF.name;document.getElementById('cust-detail-overlay')?.remove();openCustomerDetail(n);}
+function workF(k,v){KF.work[k]=v;openWorkerDetail(KF.wid);}
+
+// ── WORKER DETAIL ─────────────────────────────
+function editWorkerPhone(id){
+  const w=getEmployees().find(e=>String(e.id)===String(id));if(!w)return;
+  const a=prompt('10-digit WhatsApp number for '+w.name+':',w.phone||'');
+  if(a===null)return;
+  const p=cleanPhone(a);
+  if(!p){alert('Enter a valid 10-digit mobile number');return;}
+  w.phone=p;saveEmployee(w);renderEmployeeList();openWorkerDetail(id);
+}
+function openWorkerDetail(id){
+  const w=getEmployees().find(e=>String(e.id)===String(id));if(!w)return;
+  KF.wid=id;
+  document.getElementById('worker-detail-overlay')?.remove();
+  const all=getSettlements().filter(s=>String(s.workerId)===String(id)).sort((a,b)=>String(b.date).localeCompare(String(a.date))||b.id-a.id);
+  const rows=all.filter(s=>inFilter(s.date,KF.work));
+  const sale=rows.reduce((t,r)=>t+(r.totalSale||0),0);
+  const short=rows.reduce((t,r)=>t+(r.short>0?r.short:0),0);
+  const dues=rows.reduce((t,r)=>t+(r.payDue||0),0);
+  const stat=(l,v,c)=>`<div style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 4px;text-align:center;"><div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.06em;">${l}</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:${c};margin-top:3px;">${v}</div></div>`;
+  const o=document.createElement('div');
+  o.className='overlay';o.id='worker-detail-overlay';
+  o.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div style="font-size:18px;font-weight:700;">${w.name}</div>
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('worker-detail-overlay').remove()">✕ Close</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">${w.phone?'📞 '+w.phone:'No phone'} · <span style="color:var(--ms);cursor:pointer;" onclick="editWorkerPhone(${w.id})">${w.phone?'Edit':'Add phone'}</span></div>
+    ${mkFilterBar(all.map(s=>s.date),KF.work,'workF')}
+    <div style="display:flex;gap:6px;margin-bottom:14px;">${stat('SHIFTS',rows.length,'var(--text)')}${stat('SALE','₹'+fmt(sale),'#22c55e')}${stat('SHORT','₹'+fmt(short),short>0?'var(--red)':'var(--text)')}${stat('DUES','₹'+fmt(dues),dues>0?'var(--orange)':'var(--text)')}</div>
+    ${rows.length?rows.map(r=>{
+      const d=new Date(r.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+      const sh=r.short>1?`<span class="tag tag-short">Short ₹${fmt(r.short)}</span>`:r.short<-1?`<span class="tag tag-due">Excess ₹${fmt(-r.short)}</span>`:`<span class="tag tag-ok">✓ Clear</span>`;
+      return `<div class="record-item" style="margin-bottom:8px;"><div class="record-header"><div><div class="record-name">${d}</div><div class="record-meta">${r.shift==='day'?'☀️ Day':'🌙 Night'} · ${r.du}</div></div><div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;">₹${fmt(r.totalSale)}</div></div><div class="record-tags"><span class="tag tag-info">MS ${(r.msVol||0).toFixed(1)}L</span><span class="tag tag-info">HSD ${(r.hsdVol||0).toFixed(1)}L</span>${r.payDue>0?`<span class="tag tag-due">Due ₹${fmt(r.payDue)}</span>`:''}${sh}</div><button class="btn btn-wa btn-sm" style="margin-top:10px;" onclick="shareRecordWA(${r.id})">📤 Share on WhatsApp</button></div>`;
+    }).join(''):'<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">No settlements for this period</div></div>'}
+  </div>`;
+  document.body.appendChild(o);
+}
+</script>
+<script>
+// ── FIREBASE: SIGN-IN, SYNC, PIN LOCK ─────────
+firebase.initializeApp({apiKey:"AIzaSyB1wEB2nwnYmK7R0-7OaTN_ct90AIZY1pY",authDomain:"fule-sales-ad37c.firebaseapp.com",projectId:"fule-sales-ad37c",storageBucket:"fule-sales-ad37c.firebasestorage.app",messagingSenderId:"602323102139",appId:"1:602323102139:web:71fcadbfb223136aefbc9e"});
+fdb=firebase.firestore();
+fdb.enablePersistence({synchronizeTabs:true}).catch(()=>{});
+let unsubs=[];
+function refreshAll(){try{loadWorkerDropdown();renderEmployeeList();renderKhataList();const h=document.getElementById('khata-history-tab');if(h&&!h.classList.contains('hidden'))renderKhataHistory();}catch(e){console.warn(e);}}
+function startSync(){
+  [['employees','emp',(a,b)=>a.id-b.id],['settlements','set',(a,b)=>b.id-a.id],['khata','kh',(a,b)=>b.id-a.id]].forEach(([c,k,cmp])=>{
+    unsubs.push(fdb.collection(c).onSnapshot(s=>{DB[k]=s.docs.map(d=>d.data()).sort(cmp);refreshAll();},e=>console.error(c,e)));
+  });
+}
+function stopSync(){unsubs.forEach(u=>u());unsubs=[];DB.emp=[];DB.set=[];DB.kh=[];}
+async function fsImport(d){
+  const items=[...(d.employees||[]).map(o=>['employees',o]),...(d.settlements||[]).map(o=>['settlements',o]),...(d.khata||[]).map(o=>['khata',o])].filter(([,o])=>o&&o.id!=null);
+  for(let i=0;i<items.length;i+=400){const b=fdb.batch();items.slice(i,i+400).forEach(([c,o])=>b.set(fdb.collection(c).doc(String(o.id)),JSON.parse(JSON.stringify(o)),{merge:true}));await b.commit();}
+  return items.length;
+}
+function gate(id,html){document.getElementById(id)?.remove();const g=document.createElement('div');g.id=id;g.style.cssText='position:fixed;inset:0;z-index:'+(id==='pin-gate'?1100:1000)+';background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;';g.innerHTML=html;document.body.appendChild(g);return g;}
+function showLogin(){
+  document.getElementById('pin-gate')?.remove();
+  gate('login-gate',`<div style="width:100%;max-width:340px;text-align:center;"><div style="font-size:34px;margin-bottom:6px;">⛽</div><div style="font-size:20px;font-weight:700;margin-bottom:4px;">Fuel Station Manager</div><div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Sign in once on this phone</div><input id="lg-email" type="email" class="form-input" placeholder="Email" autocomplete="username" style="margin-bottom:10px;"><input id="lg-pass" type="password" class="form-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:12px;"><button class="btn btn-primary" onclick="doLogin()">Sign in</button><div id="lg-msg" style="font-size:12px;color:var(--red);margin-top:10px;min-height:16px;"></div></div>`);
+}
+function doLogin(){
+  const e=document.getElementById('lg-email').value.trim(),p=document.getElementById('lg-pass').value,m=document.getElementById('lg-msg');
+  if(!e||!p){m.textContent='Enter email and password';return;}
+  m.textContent='Signing in…';
+  firebase.auth().signInWithEmailAndPassword(e,p).catch(()=>{m.textContent='Wrong email or password';});
+}
+let pinBuf='',pinFirst='',pinTries=0,pinBlock=0,hiddenAt=0;
+const pinH=async p=>{const s='fuel:'+p;if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}return btoa(s);};
+function lockApp(){
+  pinBuf='';pinFirst='';
+  const has=!!localStorage.getItem('fs_pin');
+  const keys=[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>k===''?'<div></div>':`<button onclick="pinKey('${k}')" style="height:58px;font-size:22px;font-weight:600;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text);">${k}</button>`).join('');
+  gate('pin-gate',`<div style="width:100%;max-width:300px;text-align:center;"><div style="font-size:30px;margin-bottom:8px;">🔒</div><div id="pin-title" style="font-size:17px;font-weight:700;margin-bottom:14px;">${has?'Enter PIN':'Set a 4-digit PIN'}</div><div id="pin-dots" style="font-size:26px;letter-spacing:12px;height:40px;"></div><div id="pin-msg" style="font-size:12px;color:var(--red);min-height:18px;margin-bottom:10px;"></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${keys}</div><div style="margin-top:16px;font-size:12px;color:var(--muted);cursor:pointer;" onclick="forgotPin()">Forgot PIN? Sign in again</div></div>`);
+  pinDots();
+}
+function pinDots(){const el=document.getElementById('pin-dots');if(el)el.textContent='●'.repeat(pinBuf.length)+'○'.repeat(4-pinBuf.length);}
+async function pinKey(k){
+  const msg=document.getElementById('pin-msg');
+  if(Date.now()<pinBlock){msg.textContent='Too many tries. Wait '+Math.ceil((pinBlock-Date.now())/1000)+'s';return;}
+  if(k==='⌫'){pinBuf=pinBuf.slice(0,-1);pinDots();return;}
+  if(pinBuf.length>=4)return;
+  pinBuf+=k;pinDots();msg.textContent='';
+  if(pinBuf.length<4)return;
+  const hash=await pinH(pinBuf),saved=localStorage.getItem('fs_pin');
+  if(saved){
+    if(hash===saved){pinTries=0;document.getElementById('pin-gate').remove();}
+    else{pinTries++;pinBuf='';pinDots();if(pinTries>=5){pinBlock=Date.now()+30000;pinTries=0;msg.textContent='Too many tries. Wait 30s';}else msg.textContent='Wrong PIN';}
+  }else if(!pinFirst){pinFirst=hash;pinBuf='';pinDots();document.getElementById('pin-title').textContent='Confirm PIN';}
+  else if(hash===pinFirst){localStorage.setItem('fs_pin',hash);document.getElementById('pin-gate').remove();}
+  else{pinFirst='';pinBuf='';pinDots();document.getElementById('pin-title').textContent='Set a 4-digit PIN';msg.textContent="PINs didn't match";}
+}
+function forgotPin(){if(confirm('Sign out and set a new PIN? You will need the station login.')){localStorage.removeItem('fs_pin');firebase.auth().signOut();}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(hiddenAt&&Date.now()-hiddenAt>300000&&firebase.auth().currentUser&&!document.getElementById('pin-gate'))lockApp();});
+gate('login-gate','<div style="color:var(--muted);font-size:14px;">Loading…</div>');
+firebase.auth().onAuthStateChanged(u=>{
+  if(!u){stopSync();showLogin();return;}
+  document.getElementById('login-gate')?.remove();
+  if(!unsubs.length)startSync();
+  if(!document.getElementById('pin-gate'))lockApp();
+});
+</script>
+<script>
+// ── KHATA BILL PHOTOS (Cloudinary) ────────────
+const CLD={cloud:'mftc4wry',preset:'Fule-sales'},KP={};
+function photoHTML(k){
+  const b=KP[k];
+  return `<div id="ph-${k}" style="margin-bottom:10px;">`+(b?`<div style="display:flex;align-items:center;gap:10px;"><img src="${URL.createObjectURL(b)}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><span style="font-size:12px;color:var(--muted);flex:1;">Bill photo attached (${Math.round(b.size/1024)} KB)</span><button class="btn btn-outline btn-sm" onclick="KP['${k}']=null;photoUI('${k}')">✕</button></div>`:`<button class="btn btn-outline btn-sm" onclick="pickPhoto('${k}')">📷 Attach bill photo</button>`)+`</div>`;
+}
+function photoUI(k){const el=document.getElementById('ph-'+k);if(el)el.outerHTML=photoHTML(k);}
+function pickPhoto(k){
+  const i=document.createElement('input');i.type='file';i.accept='image/*';
+  i.onchange=async()=>{const f=i.files[0];if(!f)return;try{KP[k]=await resizeImage(f,1280,0.7);}catch(e){alert('Could not read this photo');return;}photoUI(k);};
+  i.click();
+}
+async function uploadBill(b){
+  const fd=new FormData();fd.append('file',b,'bill.jpg');fd.append('upload_preset',CLD.preset);
+  const r=await fetch('https://api.cloudinary.com/v1_1/'+CLD.cloud+'/image/upload',{method:'POST',body:fd});
+  const j=await r.json();
+  if(!r.ok||!j.secure_url)throw new Error((j.error&&j.error.message)||'Upload failed');
+  return j.secure_url;
+}
+// returns the photo link, '' if no photo / saving without it, null if an upload is already running
+async function billPhoto(k){
+  const b=KP[k];if(!b)return '';
+  if(KP.busy)return null;
+  KP.busy=true;
+  try{
+    for(;;){
+      try{return await uploadBill(b);}
+      catch(e){if(!confirm('Photo upload failed ('+e.message+').\nOK = try again\nCancel = save without photo'))return '';}
+    }
+  }finally{KP.busy=false;}
+}
+function billThumb(u){const t=u.replace('/upload/','/upload/c_fill,w_120,h_120,q_auto/');return `<img src="${t}" onerror="this.onerror=null;this.src='${u}'" onclick="viewBill('${u}')" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);margin-top:6px;cursor:pointer;display:block;">`;}
+function viewBill(u){const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;z-index:1050;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:12px;';o.onclick=()=>o.remove();o.innerHTML=`<img src="${u}" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;"><div style="position:absolute;top:14px;right:18px;font-size:26px;color:#fff;">✕</div>`;document.body.appendChild(o);}
+async function quickAdd(name,type,k,amtId,noteId){
+  const amount=parseFloat(document.getElementById(amtId).value)||0;
+  const notes=document.getElementById(noteId).value.trim();
+  if(!amount){alert('Enter an amount');return;}
+  const ph=requireKhataPhone(name,'');if(!ph)return;
+  const photo=await billPhoto(k);if(photo===null)return;
+  addKhataEntryData({id:Date.now(),type,customerName:name,amount,date:new Date().toISOString().split('T')[0],notes,worker:'',phone:ph,photo});
+  KP[k]=null;
+  document.getElementById('cust-detail-overlay')?.remove();
+  openCustomerDetail(name);
+}
+function quickAddDue(name){return quickAdd(name,'due','qdue','quick-due-amount','quick-due-notes');}
+function quickAddPayment(name){return quickAdd(name,'payment','qpay','quick-pay-amount','quick-pay-notes');}
+</script>
+</body>
+</html>
+
+<!-- INJECT KHATA STYLES & PAGE via script -->
+<script>
+// ── INJECT KHATA NAV BUTTON ──────────────────
+document.querySelector('.bottom-nav').innerHTML += `
+  <button class="nav-btn" onclick="showPage('khata',this)">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="20" height="20"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/><circle cx="12" cy="12" r="10"/></svg>
+    Khata
+  </button>`;
+
+// ── INJECT KHATA PAGE ────────────────────────
+const khataPage = document.createElement('div');
+khataPage.className = 'page';
+khataPage.id = 'page-khata';
+khataPage.innerHTML = `
+  <div class="page-title">📒 Khata Book</div>
+  <div class="page-sub">Customer due bills tracker</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchKhataTab('list',this)">Customers</button>
+    <button class="tab" onclick="switchKhataTab('add',this)">+ Add Entry</button>
+    <button class="tab" onclick="switchKhataTab('history',this)">History</button>
+  </div>
+
+  <!-- TAB: CUSTOMER LIST -->
+  <div id="khata-list-tab">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input type="text" class="form-input" id="khata-search" placeholder="🔍 Search customer..." oninput="renderKhataList()" style="flex:1;">
+    </div>
+    <div id="khata-summary-bar" style="margin-bottom:12px;"></div>
+    <div id="khata-customer-list"></div>
+  </div>
+
+  <!-- TAB: ADD ENTRY -->
+  <div id="khata-add-tab" class="hidden">
+    <div class="card">
+      <div class="card-title">New Due Entry</div>
+      <div class="form-group">
+        <label class="form-label">Customer Name</label>
+        <input type="text" class="form-input" id="khata-cust-name" placeholder="Enter customer name" list="khata-existing-names" onchange="fillKhataPhone()">
+        <datalist id="khata-existing-names"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (required)</label>
+        <input type="text" class="form-input" id="khata-cust-phone" placeholder="9876543210">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (₹)</label>
+          <input type="number" class="form-input" id="khata-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" id="khata-date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Product / Notes</label>
+        <input type="text" class="form-input" id="khata-notes" placeholder="e.g. MS 5L, Diesel 10L...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Worker who gave credit</label>
+        <select class="form-input" id="khata-worker"></select>
+      </div>
+      <div id="ph-due" style="margin-bottom:10px;"><button class="btn btn-outline btn-sm" onclick="pickPhoto('due')">📷 Attach bill photo</button></div>
+      <button class="btn btn-primary" onclick="addKhataEntry()">+ Add Due Entry</button>
+    </div>
+
+    <div class="card" style="border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.05);">
+      <div class="card-title" style="color:#22c55e;">Record Payment Received</div>
+      <div class="form-group">
+        <label class="form-label">Customer Name</label>
+        <input type="text" class="form-input" id="khata-pay-name" placeholder="Customer who paid" list="khata-existing-names-pay">
+        <datalist id="khata-existing-names-pay"></datalist>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount Paid (₹)</label>
+          <input type="number" class="form-input" id="khata-pay-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" id="khata-pay-date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes</label>
+        <input type="text" class="form-input" id="khata-pay-notes" placeholder="Payment method, remarks...">
+      </div>
+      <div id="ph-pay" style="margin-bottom:10px;"><button class="btn btn-outline btn-sm" onclick="pickPhoto('pay')">📷 Attach bill photo</button></div>
+      <button class="btn btn-success" onclick="addKhataPayment()">✓ Record Payment</button>
+    </div>
+  </div>
+
+  <!-- TAB: HISTORY -->
+  <div id="khata-history-tab" class="hidden">
+    <div id="khata-history-list"></div>
+  </div>
+`;
+document.body.insertBefore(khataPage, document.querySelector('.bottom-nav'));
+
+// ── ADJUST NAV for 5 items ───────────────────
+document.querySelector('.bottom-nav').style.cssText += 'overflow-x:auto;';
+
+// ── KHATA STORAGE ────────────────────────────
+
+// ── KHATA TABS ───────────────────────────────
+function switchKhataTab(tab, btn){
+  document.querySelectorAll('#page-khata .tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('khata-list-tab').classList.toggle('hidden', tab!=='list');
+  document.getElementById('khata-add-tab').classList.toggle('hidden', tab!=='add');
+  document.getElementById('khata-history-tab').classList.toggle('hidden', tab!=='history');
+  if(tab==='list') renderKhataList();
+  if(tab==='add') setupKhataAdd();
+  if(tab==='history') renderKhataHistory();
+}
+
+function setupKhataAdd(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('khata-date').value=today;
+  document.getElementById('khata-pay-date').value=today;
+  // Fill worker dropdown
+  const sel=document.getElementById('khata-worker');
+  sel.innerHTML='<option value="">Select worker</option>';
+  getEmployees().forEach(e=>{const o=document.createElement('option');o.value=e.name;o.textContent=e.name;sel.appendChild(o);});
+  // Fill customer datalist
+  const names=[...new Set(getKhataEntries().map(e=>e.customerName))];
+  document.getElementById('khata-existing-names').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+  document.getElementById('khata-existing-names-pay').innerHTML=names.map(n=>`<option value="${n}">`).join('');
+}
+
+// ── ADD DUE ENTRY ────────────────────────────
+async function addKhataEntry(){
+  const name=document.getElementById('khata-cust-name').value.trim();
+  const amount=parseFloat(document.getElementById('khata-amount').value)||0;
+  const date=document.getElementById('khata-date').value;
+  if(!name){alert('Enter customer name');return;}
+  if(!amount){alert('Enter amount');return;}
+  const ph=requireKhataPhone(name,document.getElementById('khata-cust-phone').value);if(!ph)return;
+  const photo=await billPhoto('due');if(photo===null)return;
+  addKhataEntryData({
+    id:Date.now(),
+    type:'due',
+    customerName:name,
+    phone:ph,photo,
+    amount,date,
+    notes:document.getElementById('khata-notes').value.trim(),
+    worker:document.getElementById('khata-worker').value
+  });
+  document.getElementById('khata-cust-name').value='';
+  document.getElementById('khata-amount').value='';
+  document.getElementById('khata-notes').value='';
+  document.getElementById('khata-cust-phone').value='';
+  KP.due=null;photoUI('due');alert('✓ Due entry added for '+name);
+  renderKhataList();
+}
+
+// ── ADD PAYMENT ───────────────────────────────
+async function addKhataPayment(){
+  const name=document.getElementById('khata-pay-name').value.trim();
+  const amount=parseFloat(document.getElementById('khata-pay-amount').value)||0;
+  const date=document.getElementById('khata-pay-date').value;
+  if(!name){alert('Enter customer name');return;}
+  if(!amount){alert('Enter amount paid');return;}
+  const ph=requireKhataPhone(name,'');if(!ph)return;
+  const photo=await billPhoto('pay');if(photo===null)return;
+  addKhataEntryData({
+    id:Date.now(),
+    type:'payment',
+    customerName:name,phone:ph,photo,
+    amount,date,
+    notes:document.getElementById('khata-pay-notes').value.trim(),
+    worker:''
+  });
+  document.getElementById('khata-pay-name').value='';
+  document.getElementById('khata-pay-amount').value='';
+  document.getElementById('khata-pay-notes').value='';
+  KP.pay=null;photoUI('pay');alert('✓ Payment recorded for '+name);
+  renderKhataList();
+}
+
+// ── CUSTOMER BALANCE CALCULATOR ───────────────
+function getCustomerBalances(search=''){
+  const entries=getKhataEntries();
+  const customers={};
+  entries.forEach(e=>{
+    const n=e.customerName;
+    if(!customers[n]) customers[n]={name:n,phone:e.phone||'',due:0,paid:0,lastDate:e.date,entries:[]};
+    if(e.type==='due') customers[n].due+=e.amount;
+    else customers[n].paid+=e.amount;
+    if(e.date>customers[n].lastDate) customers[n].lastDate=e.date;
+    customers[n].entries.push(e);
+    if(e.phone) customers[n].phone=e.phone;
+  });
+  let list=Object.values(customers).map(c=>({...c,balance:c.due-c.paid}));
+  if(search) list=list.filter(c=>c.name.toLowerCase().includes(search.toLowerCase()));
+  return list.sort((a,b)=>b.balance-a.balance);
+}
+
+// ── RENDER CUSTOMER LIST ──────────────────────
+function renderKhataList(){
+  const search=document.getElementById('khata-search')?.value||'';
+  const customers=getCustomerBalances(search);
+  const totalDue=customers.reduce((s,c)=>s+(c.balance>0?c.balance:0),0);
+  const totalPaid=customers.reduce((s,c)=>s+(c.balance<0?Math.abs(c.balance):0),0);
+
+  document.getElementById('khata-summary-bar').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:var(--radius);padding:12px;">
+        <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.06em;margin-bottom:4px;">TOTAL DUE</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text);">₹${fmt(totalDue)}</div>
+      </div>
+      <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:12px;">
+        <div style="font-size:11px;font-weight:700;color:#22c55e;letter-spacing:0.06em;margin-bottom:4px;">CUSTOMERS</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--text);">${customers.filter(c=>c.balance>0).length}</div>
+      </div>
+    </div>`;
+
+  const el=document.getElementById('khata-customer-list');
+  if(!customers.length){
+    el.innerHTML='<div class="empty"><div class="empty-icon">📒</div><div class="empty-text">No customers yet — add a due entry</div></div>';
+    return;
+  }
+  el.innerHTML=customers.map(c=>{
+    const bal=c.balance;
+    const statusColor=bal>0?'var(--red)':bal<0?'var(--orange)':'#22c55e';
+    const statusText=bal>0?`Due ₹${fmt(bal)}`:bal<0?`Advance ₹${fmt(Math.abs(bal))}`:'✓ Clear';
+    const d=new Date(c.lastDate+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    const init=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px;cursor:pointer;" onclick="openCustomerDetail('${c.name.replace(/'/g,"\\'")}')">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--red);flex-shrink:0;">${init}</div>
+        <div style="flex:1;">
+          <div style="font-size:14px;font-weight:600;">${c.name}</div>
+          <div style="font-size:12px;color:var(--muted);">${c.phone||'No phone'} · Last: ${d}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${statusColor};">${statusText}</div>
+          <div style="font-size:11px;color:var(--muted);">Total: ₹${fmt(c.due)} given</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── CUSTOMER DETAIL OVERLAY ───────────────────
+function openCustomerDetail(name){
+  const entries=getKhataEntries().filter(e=>e.customerName===name).sort((a,b)=>b.date.localeCompare(a.date));
+  const due=entries.filter(e=>e.type==='due').reduce((s,e)=>s+e.amount,0);
+  const paid=entries.filter(e=>e.type==='payment').reduce((s,e)=>s+e.amount,0);
+  const balance=due-paid;
+  const phone=entries.find(e=>e.phone)?.phone||'';
+
+  const overlay=document.createElement('div');
+  overlay.className='overlay';
+  overlay.id='cust-detail-overlay';
+  overlay.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+          <div style="font-size:16px;font-weight:700;">${name}</div>
+          <div style="font-size:12px;color:var(--muted);">${phone||'No phone'}</div>
+        </div>
+        <button onclick="document.getElementById('cust-detail-overlay').remove()" style="background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);padding:6px 12px;cursor:pointer;font-family:'Inter',sans-serif;">✕ Close</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);border-radius:var(--radius);padding:10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:3px;">GIVEN</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;">₹${fmt(due)}</div>
+        </div>
+        <div style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);border-radius:var(--radius);padding:10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:#22c55e;margin-bottom:3px;">PAID</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;">₹${fmt(paid)}</div>
+        </div>
+        <div style="background:${balance>0?'rgba(248,113,113,0.1)':balance<0?'rgba(251,146,60,0.1)':'rgba(34,197,94,0.1)'};border:1px solid ${balance>0?'rgba(248,113,113,0.2)':balance<0?'rgba(251,146,60,0.2)':'rgba(34,197,94,0.2)'};border-radius:var(--radius);padding:10px;text-align:center;">
+          <div style="font-size:10px;font-weight:700;color:${balance>0?'var(--red)':balance<0?'var(--orange)':'#22c55e'};margin-bottom:3px;">BALANCE</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${balance>0?'var(--red)':balance<0?'var(--orange)':'#22c55e'};">₹${fmt(Math.abs(balance))}</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button onclick="shareKhataWA('${name.replace(/'/g,"\\'")}','${phone}')" class="btn btn-wa btn-sm" style="flex:1;">📤 WhatsApp</button>
+        <button onclick="deleteCustomer('${name.replace(/'/g,"\\'")}');document.getElementById('cust-detail-overlay').remove();" class="btn btn-danger btn-sm" style="flex:1;">🗑 Delete All</button>
+      </div>
+
+      <!-- Quick Add Due -->
+      <div style="background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.2);border-radius:var(--radius);padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--red);letter-spacing:0.06em;margin-bottom:10px;">+ ADD DUE</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input type="number" id="quick-due-amount" class="form-input" placeholder="Amount ₹" style="height:36px;font-size:13px;">
+          <input type="text" id="quick-due-notes" class="form-input" placeholder="Notes (MS/HSD...)" style="height:36px;font-size:13px;">
+        </div>
+        ${photoHTML('qdue')}<button onclick="quickAddDue('${name.replace(/'/g,"\\'")}')" class="btn btn-danger" style="height:36px;font-size:13px;">📤 Add Due Entry</button>
+      </div>
+
+      <!-- Quick Add Payment -->
+      <div style="background:rgba(34,197,94,0.07);border:1px solid rgba(34,197,94,0.2);border-radius:var(--radius);padding:12px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:#22c55e;letter-spacing:0.06em;margin-bottom:10px;">✓ RECORD PAYMENT</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <input type="number" id="quick-pay-amount" class="form-input" placeholder="Amount ₹" style="height:36px;font-size:13px;">
+          <input type="text" id="quick-pay-notes" class="form-input" placeholder="Remarks..." style="height:36px;font-size:13px;">
+        </div>
+        ${photoHTML('qpay')}<button onclick="quickAddPayment('${name.replace(/'/g,"\\'")}')" class="btn btn-success" style="height:36px;font-size:13px;">📥 Record Payment</button>
+      </div>
+
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--dim);margin-bottom:10px;">TRANSACTION HISTORY</div>
+      ${(KF.name=name,'')}${mkFilterBar(entries.map(e=>e.date),KF.cust,'custF')}
+      ${entries.filter(e=>inFilter(e.date,KF.cust)).map(e=>{
+        const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+        const isDue=e.type==='due';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+          <div style="width:32px;height:32px;border-radius:50%;background:${isDue?'rgba(248,113,113,0.1)':'rgba(34,197,94,0.1)'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">${isDue?'📤':'📥'}</div>
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:500;color:${isDue?'var(--red)':'#22c55e'};">${isDue?'Due given':'Payment received'}</div>
+            <div style="font-size:11px;color:var(--muted);">${d}${e.notes?' · '+e.notes:''}${e.worker?' · '+e.worker:''}</div>${e.photo?billThumb(e.photo):''}
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:${isDue?'var(--red)':'#22c55e'};">${isDue?'-':'+'} ₹${fmt(e.amount)}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function deleteCustomer(name){
+  if(!confirm('Delete ALL entries for '+name+'?')) return;
+  saveKhataEntries(getKhataEntries().filter(e=>e.customerName!==name));
+  renderKhataList();
+}
+
+// ── HISTORY TAB ───────────────────────────────
+function renderKhataHistory(){
+  const allE=getKhataEntries().sort((a,b)=>b.date.localeCompare(a.date));
+  const entries=allE.filter(e=>inFilter(e.date,KF.hist));
+  const bar=mkFilterBar(allE.map(e=>e.date),KF.hist,'histF');
+  const el=document.getElementById('khata-history-list');
+  if(!entries.length){el.innerHTML=bar+'<div class="empty"><div class="empty-icon">📜</div><div class="empty-text">No entries for this period</div></div>';return;}
+  el.innerHTML=bar+entries.map(e=>{
+    const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+    const isDue=e.type==='due';
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+      <div style="width:36px;height:36px;border-radius:50%;background:${isDue?'rgba(248,113,113,0.1)':'rgba(34,197,94,0.1)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${isDue?'📤':'📥'}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;">${e.customerName}</div>
+        <div style="font-size:12px;color:var(--muted);">${d}${e.notes?' · '+e.notes:''}${e.worker?' · by '+e.worker:''}</div>${e.photo?billThumb(e.photo):''}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:${isDue?'var(--red)':'#22c55e'};">${isDue?'-':'+'} ₹${fmt(e.amount)}</div>
+        <div style="font-size:11px;color:var(--muted);">${isDue?'Due':'Paid'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── WHATSAPP SHARE FOR CUSTOMER ───────────────
+function shareKhataWA(name, phone){
+  const entries=getKhataEntries().filter(e=>e.customerName===name).sort((a,b)=>a.date.localeCompare(b.date));
+  const due=entries.filter(e=>e.type==='due').reduce((s,e)=>s+e.amount,0);
+  const paid=entries.filter(e=>e.type==='payment').reduce((s,e)=>s+e.amount,0);
+  const balance=due-paid;
+  const history=entries.map(e=>{
+    const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+    return `${e.type==='due'?'📤':'📥'} ${d}: ${e.type==='due'?'Due':'Paid'} ₹${fmt(e.amount)}${e.notes?' ('+e.notes+')':''}`;
+  }).join('\n');
+  const target=phone?`https://wa.me/91${phone}?text=`:'https://wa.me/?text=';
+  const msg=encodeURIComponent(`📒 *Khata Statement — ${name}*\n\n${history}\n\n━━━━━━━━━━━━━\n💸 Total Given: ₹${fmt(due)}\n✅ Total Paid: ₹${fmt(paid)}\n${balance>0?`⚠️ *Balance Due: ₹${fmt(balance)}*`:balance<0?`➕ Advance: ₹${fmt(Math.abs(balance))}`:'✅ *Account Clear*'}\n\n_Rajendra Fuel Station_`);
+  window.open(target+msg,'_blank');
+}
+
+// ── INIT KHATA ON PAGE LOAD ───────────────────
+window.addEventListener('DOMContentLoaded', ()=>{
+  renderKhataList();
+}, {once:false});
+setTimeout(()=>renderKhataList(), 500);
+</script>
+<script>
+// ── BACKUP & RESTORE ─────────────────────────
+function backupData() {
+  const data = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    employees: getEmployees(),
+    settlements: getSettlements(),
+    khata: getKhataEntries()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'fuel-station-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function restoreData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.version) throw new Error('Invalid backup file');
+        if (!confirm(`Restore backup from ${new Date(data.exportedAt).toLocaleString('en-IN')}?\n\nThis will MERGE with existing data.`)) return;
+        fsImport(data).then(n=>alert('✓ Restored '+n+' records')).catch(err=>alert('Restore failed: '+err.message));
+      } catch(err) {
+        alert('Error reading backup: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ── ADD BACKUP BUTTON TO ANALYSIS PAGE ───────
+window.addEventListener('DOMContentLoaded', () => {
+  const analysisPage = document.getElementById('page-analysis');
+  if (analysisPage) {
+    const backupCard = document.createElement('div');
+    backupCard.className = 'card';
+    backupCard.style.marginTop = '12px';
+    backupCard.innerHTML = `
+      <div class="card-title">Data Backup</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;">Export all your data as a JSON file. Restore anytime on any device.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button class="btn btn-primary" onclick="backupData()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Download Backup
+        </button>
+        <button class="btn btn-outline" onclick="restoreData()">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Restore Backup
+        </button>
+      </div>`;
+    analysisPage.appendChild(backupCard);
+  }
+}, { once: true });
+</script>
+<script>
+// Quick due/payment from customer detail overlay
+</script>
